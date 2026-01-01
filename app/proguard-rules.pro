@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep data classes for Gson
+-keep class anwar.mlsa.eventsregistration.data.** { *; }
+
+# Retrofit
+-keepattributes Signature
+-keepattributes Exceptions

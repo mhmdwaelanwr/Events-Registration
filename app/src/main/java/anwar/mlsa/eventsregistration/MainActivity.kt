@@ -1,8 +1,14 @@
 package anwar.mlsa.eventsregistration
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -20,6 +26,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,10 +39,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,9 +49,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import anwar.mlsa.eventsregistration.ui.SettingsScreen
 import anwar.mlsa.eventsregistration.ui.theme.MLSAEgyptEventsRegistrationTheme
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceState
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceViewModel
+import anwar.mlsa.eventsregistration.viewmodel.DarkModeConfig
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.delay
@@ -57,20 +64,34 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MLSAEgyptEventsRegistrationTheme {
-                AttendanceApp()
+            val viewModel: AttendanceViewModel = viewModel()
+            val settingsState by viewModel.settingsState.collectAsState()
+
+            val darkTheme = when (settingsState.darkMode) {
+                DarkModeConfig.SYSTEM -> isSystemInDarkTheme()
+                DarkModeConfig.LIGHT -> false
+                DarkModeConfig.DARK -> true
+            }
+
+            MLSAEgyptEventsRegistrationTheme(darkTheme = darkTheme) {
+                AttendanceApp(viewModel = viewModel)
             }
         }
     }
 }
 
+enum class Screen {
+    SCANNING, SETTINGS
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AttendanceApp(viewModel: AttendanceViewModel = viewModel()) {
+fun AttendanceApp(viewModel: AttendanceViewModel) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
+    val settingsState by viewModel.settingsState.collectAsState()
+    var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -94,85 +115,115 @@ fun AttendanceApp(viewModel: AttendanceViewModel = viewModel()) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("MSC AOU") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    if (currentScreen == Screen.SETTINGS) {
+        SettingsScreen(
+            viewModel = viewModel,
+            settingsState = settingsState,
+            onBack = { currentScreen = Screen.SCANNING }
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("MLSA Egypt Attendance") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    actions = {
+                        // Dark Mode Toggle
+                        IconButton(onClick = {
+                            val newMode = if (settingsState.darkMode == DarkModeConfig.DARK) {
+                                DarkModeConfig.LIGHT
+                            } else {
+                                DarkModeConfig.DARK
+                            }
+                            viewModel.updateDarkMode(newMode)
+                        }) {
+                            Icon(
+                                imageVector = if (settingsState.darkMode == DarkModeConfig.DARK) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = "Toggle Dark Mode"
+                            )
+                        }
+                        // Settings Button
+                        IconButton(onClick = { currentScreen = Screen.SETTINGS }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    }
                 )
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            if (hasCameraPermission) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    ScanningScreen(
-                        viewModel = viewModel,
-                        uiState = uiState
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Camera permission is required to scan QR codes.")
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                if (hasCameraPermission) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        ScanningScreen(
+                            viewModel = viewModel,
+                            uiState = uiState,
+                            hapticEnabled = settingsState.hapticEnabled
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Camera permission is required to scan QR codes.")
+                    }
                 }
             }
         }
-    }
 
-    // Handle UI State for Feedback
-    when (val state = uiState) {
-        is AttendanceState.Success -> {
-            ResultDialog(
-                type = ResultType.SUCCESS,
-                message = "Success: ${state.message}\nID: ${state.registrationId}",
-                onDismiss = { viewModel.resetState() }
-            )
+        // Handle UI State for Feedback
+        when (val state = uiState) {
+            is AttendanceState.Success -> {
+                ResultDialog(
+                    type = ResultType.SUCCESS,
+                    message = "Success: ${state.message}\nID: ${state.registrationId}",
+                    onDismiss = { viewModel.resetState() }
+                )
+            }
+            is AttendanceState.AlreadyRegistered -> {
+                ResultDialog(
+                    type = ResultType.ALREADY_REGISTERED,
+                    message = "${state.message}\nID: ${state.registrationId}",
+                    onDismiss = { viewModel.resetState() }
+                )
+            }
+            is AttendanceState.Error -> {
+                ResultDialog(
+                    type = ResultType.ERROR,
+                    message = state.message,
+                    onDismiss = { viewModel.resetState() }
+                )
+            }
+            else -> {}
         }
-        is AttendanceState.AlreadyRegistered -> {
-            ResultDialog(
-                type = ResultType.ALREADY_REGISTERED,
-                message = "${state.message}\nID: ${state.registrationId}",
-                onDismiss = { viewModel.resetState() }
-            )
-        }
-        is AttendanceState.Error -> {
-            ResultDialog(
-                type = ResultType.ERROR,
-                message = state.message,
-                onDismiss = { viewModel.resetState() }
-            )
-        }
-        else -> {}
     }
 }
 
 @Composable
 fun ScanningScreen(
     viewModel: AttendanceViewModel,
-    uiState: AttendanceState
+    uiState: AttendanceState,
+    hapticEnabled: Boolean
 ) {
     var torchEnabled by remember { mutableStateOf(false) }
     var manualId by remember { mutableStateOf("") }
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
 
-    // Trigger haptic feedback on result states
     LaunchedEffect(uiState) {
-        if (uiState !is AttendanceState.Idle && uiState !is AttendanceState.Loading) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (hapticEnabled && uiState !is AttendanceState.Idle && uiState !is AttendanceState.Loading) {
+            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
         }
     }
 
@@ -212,7 +263,7 @@ fun ScanningScreen(
                 contentDescription = "Toggle Flash"
             )
         }
-//*
+
         // 5. Status Bar (Capsule Design)
         Box(
             modifier = Modifier
@@ -306,10 +357,9 @@ fun ScanningScreen(
 fun ScannerOverlay(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "scanner")
     
-    // Animate the laser from top to bottom
     val laserOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 250.dp.value, // Corresponds to the height of the scanner box
+        targetValue = 250.dp.value,
         animationSpec = infiniteRepeatable(
             animation = tween(1500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
@@ -325,7 +375,7 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = 4.dp.toPx()
             val cornerLength = 30.dp.toPx()
-            val color = Color(0xFF00BCF2) // Microsoft Blue tone
+            val color = Color(0xFF00BCF2)
 
             // Top Left
             drawPath(
@@ -369,13 +419,12 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
             )
         }
 
-        // Animated Laser Line
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(2.dp)
                 .align(Alignment.TopCenter)
-                .offset(y = laserOffset.dp) // Use offset for smooth animation
+                .offset(y = laserOffset.dp)
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(Color.Transparent, Color(0xFF00BCF2), Color.Transparent)
@@ -395,9 +444,14 @@ fun ResultDialog(
     message: String,
     onDismiss: () -> Unit
 ) {
-    LaunchedEffect(Unit) {
-        delay(2500)
-        onDismiss()
+    val context = LocalContext.current
+
+    // Only auto-dismiss for success or already registered, keep error persistent until action
+    if (type != ResultType.ERROR) {
+        LaunchedEffect(Unit) {
+            delay(2500)
+            onDismiss()
+        }
     }
 
     val backgroundColor = when(type) {
@@ -455,12 +509,60 @@ fun ResultDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
+
+                if (type == ResultType.ERROR) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:")
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("moanwarpcz@gmail.com"))
+                                    putExtra(Intent.EXTRA_SUBJECT, "EventSync Error Report")
+                                    putExtra(Intent.EXTRA_TEXT, "Error Details:\n$message")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // Handle case where no email app is found
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        ) {
+                            Text("Email")
+                        }
+
+                        Button(
+                            onClick = {
+                                val url = "https://api.whatsapp.com/send?phone=+201010373387&text=${Uri.encode("Error Report:\n$message")}"
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse(url)
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // Handle case where WhatsApp is not installed
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+                        ) {
+                            Text("WhatsApp")
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = onDismiss) {
+                        Text("Dismiss", color = Color.Gray)
+                    }
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalGetImage::class)
+@androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 @Composable
 fun CameraPreview(
     torchEnabled: Boolean,
@@ -529,7 +631,7 @@ class QrCodeAnalyzer(
 
     private val scanner = BarcodeScanning.getClient()
 
-    @OptIn(ExperimentalGetImage::class)
+    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
@@ -544,7 +646,6 @@ class QrCodeAnalyzer(
                     }
                 }
                 .addOnFailureListener {
-                    // Handle failure if needed
                 }
                 .addOnCompleteListener {
                     imageProxy.close()

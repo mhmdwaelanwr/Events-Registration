@@ -9,6 +9,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class DarkModeConfig {
+    SYSTEM, LIGHT, DARK
+}
+
+data class SettingsState(
+    val darkMode: DarkModeConfig = DarkModeConfig.SYSTEM,
+    val hapticEnabled: Boolean = true
+)
+
 sealed class AttendanceState {
     object Idle : AttendanceState()
     object Loading : AttendanceState()
@@ -21,17 +30,27 @@ class AttendanceViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<AttendanceState>(AttendanceState.Idle)
     val uiState: StateFlow<AttendanceState> = _uiState.asStateFlow()
 
+    private val _settingsState = MutableStateFlow(SettingsState())
+    val settingsState: StateFlow<SettingsState> = _settingsState.asStateFlow()
+
     private var lastScannedCode: String? = null
     private var lastScanTime: Long = 0
 
     companion object {
-        private const val SCAN_DELAY = 3000L // Prevent rapid rescanning of the same code
+        private const val SCAN_DELAY = 3000L
+    }
+
+    fun updateDarkMode(config: DarkModeConfig) {
+        _settingsState.value = _settingsState.value.copy(darkMode = config)
+    }
+
+    fun toggleHapticFeedback(enabled: Boolean) {
+        _settingsState.value = _settingsState.value.copy(hapticEnabled = enabled)
     }
 
     fun markAttendance(registrationId: String) {
         if (_uiState.value is AttendanceState.Loading) return
 
-        // Debounce same code scanning
         val currentTime = System.currentTimeMillis()
         if (registrationId == lastScannedCode && (currentTime - lastScanTime) < SCAN_DELAY) {
             return
@@ -53,7 +72,6 @@ class AttendanceViewModel : ViewModel() {
                                 registrationId = registrationId
                             )
                         } else {
-                            // Check for "already registered" keywords in the message
                             if (body.message?.contains("already registered", ignoreCase = true) == true ||
                                 body.message?.contains("duplicate", ignoreCase = true) == true ||
                                 body.message?.contains("مسجل مسبقا", ignoreCase = true) == true) {
@@ -69,7 +87,6 @@ class AttendanceViewModel : ViewModel() {
                         _uiState.value = AttendanceState.Error("Empty response body")
                     }
                 } else {
-                    // Sometimes APIs return 400 or 409 for duplicates
                     if (response.code() == 409) {
                          _uiState.value = AttendanceState.AlreadyRegistered(
                             message = "User already registered",
