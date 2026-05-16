@@ -22,7 +22,7 @@ A comprehensive Android application designed to streamline the process of managi
 
 ## 🔗 Hedera Integration
 
-See `docs/HEDERA.md` for the Hedera Consensus Service workflow, configuration, and troubleshooting notes.
+See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configuration, and troubleshooting notes.
 
 ## 🚀 Getting Started
 
