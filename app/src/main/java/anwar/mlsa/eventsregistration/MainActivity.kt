@@ -50,6 +50,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import anwar.mlsa.eventsregistration.ui.SettingsScreen
+import anwar.mlsa.eventsregistration.ui.theme.DarkMode
+import anwar.mlsa.eventsregistration.ui.theme.FlashOff
+import anwar.mlsa.eventsregistration.ui.theme.FlashOn
+import anwar.mlsa.eventsregistration.ui.theme.LightMode
 import anwar.mlsa.eventsregistration.ui.theme.MLSAEgyptEventsRegistrationTheme
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceState
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceViewModel
@@ -141,7 +145,7 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                             viewModel.updateDarkMode(newMode)
                         }) {
                             Icon(
-                                imageVector = if (settingsState.darkMode == DarkModeConfig.DARK) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                imageVector = if (settingsState.darkMode == DarkModeConfig.DARK) Icons.Filled.LightMode else Icons.Filled.DarkMode,
                                 contentDescription = "Toggle Dark Mode"
                             )
                         }
@@ -259,7 +263,7 @@ fun ScanningScreen(
             contentColor = if (torchEnabled) Color.Black else Color.Gray
         ) {
             Icon(
-                imageVector = if (torchEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                imageVector = if (torchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
                 contentDescription = "Toggle Flash"
             )
         }
