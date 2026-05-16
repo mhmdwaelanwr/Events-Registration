@@ -39,6 +39,28 @@ android {
             isUniversalApk = false
         }
     }
+
+    bundle {
+        abi {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        language {
+            enableSplit = true
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1"
+            )
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
