@@ -30,7 +30,7 @@ See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configur
 
 *   Android Studio Arctic Fox or newer
 *   JDK 11 or newer
-*   Android SDK API Level 21+
+*   Android SDK API Level 24+
 
 ### Installation
 
