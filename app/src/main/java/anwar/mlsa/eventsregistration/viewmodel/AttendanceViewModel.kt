@@ -1,9 +1,11 @@
 package anwar.mlsa.eventsregistration.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import anwar.mlsa.eventsregistration.data.MarkAttendanceRequest
 import anwar.mlsa.eventsregistration.Hedera
+import anwar.mlsa.eventsregistration.data.MarkAttendanceRequest
+import anwar.mlsa.eventsregistration.data.SettingsPreferences
 import anwar.mlsa.eventsregistration.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,11 +31,13 @@ sealed class AttendanceState {
     data class Error(val message: String) : AttendanceState()
 }
 
-class AttendanceViewModel : ViewModel() {
+class AttendanceViewModel(
+    private val settingsPreferences: SettingsPreferences
+) : ViewModel() {
     private val _uiState = MutableStateFlow<AttendanceState>(AttendanceState.Idle)
     val uiState: StateFlow<AttendanceState> = _uiState.asStateFlow()
 
-    private val _settingsState = MutableStateFlow(SettingsState())
+    private val _settingsState = MutableStateFlow(settingsPreferences.loadSettings())
     val settingsState: StateFlow<SettingsState> = _settingsState.asStateFlow()
 
     private var lastScannedCode: String? = null
@@ -45,10 +49,12 @@ class AttendanceViewModel : ViewModel() {
 
     fun updateDarkMode(config: DarkModeConfig) {
         _settingsState.value = _settingsState.value.copy(darkMode = config)
+        settingsPreferences.saveDarkMode(config)
     }
 
     fun toggleHapticFeedback(enabled: Boolean) {
         _settingsState.value = _settingsState.value.copy(hapticEnabled = enabled)
+        settingsPreferences.saveHapticEnabled(enabled)
     }
 
     fun markAttendance(registrationId: String) {
@@ -118,3 +124,16 @@ class AttendanceViewModel : ViewModel() {
         _uiState.value = AttendanceState.Idle
     }
 }
+
+class AttendanceViewModelFactory(
+    private val settingsPreferences: SettingsPreferences
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AttendanceViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return AttendanceViewModel(settingsPreferences) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+

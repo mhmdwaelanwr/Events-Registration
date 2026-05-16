@@ -57,7 +57,9 @@ import anwar.mlsa.eventsregistration.ui.theme.LightMode
 import anwar.mlsa.eventsregistration.ui.theme.MLSAEgyptEventsRegistrationTheme
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceState
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceViewModel
+import anwar.mlsa.eventsregistration.viewmodel.AttendanceViewModelFactory
 import anwar.mlsa.eventsregistration.viewmodel.DarkModeConfig
+import anwar.mlsa.eventsregistration.data.SettingsPreferences
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.delay
@@ -68,7 +70,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel: AttendanceViewModel = viewModel()
+            val context = LocalContext.current
+            val settingsPreferences = remember {
+                SettingsPreferences.from(context.applicationContext)
+            }
+            val viewModel: AttendanceViewModel = viewModel(
+                factory = AttendanceViewModelFactory(settingsPreferences)
+            )
             val settingsState by viewModel.settingsState.collectAsState()
 
             val darkTheme = when (settingsState.darkMode) {
@@ -95,6 +103,12 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     val uiState by viewModel.uiState.collectAsState()
     val settingsState by viewModel.settingsState.collectAsState()
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (settingsState.darkMode) {
+        DarkModeConfig.SYSTEM -> isSystemDark
+        DarkModeConfig.LIGHT -> false
+        DarkModeConfig.DARK -> true
+    }
     var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
 
     var hasCameraPermission by remember {
@@ -137,7 +151,7 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                     actions = {
                         // Dark Mode Toggle
                         IconButton(onClick = {
-                            val newMode = if (settingsState.darkMode == DarkModeConfig.DARK) {
+                            val newMode = if (isDarkTheme) {
                                 DarkModeConfig.LIGHT
                             } else {
                                 DarkModeConfig.DARK
@@ -145,8 +159,16 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                             viewModel.updateDarkMode(newMode)
                         }) {
                             Icon(
-                                imageVector = if (settingsState.darkMode == DarkModeConfig.DARK) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                                contentDescription = "Toggle Dark Mode"
+                                imageVector = when (settingsState.darkMode) {
+                                    DarkModeConfig.DARK -> Icons.Filled.DarkMode
+                                    DarkModeConfig.LIGHT -> Icons.Filled.LightMode
+                                    DarkModeConfig.SYSTEM -> if (isSystemDark) {
+                                        Icons.Filled.DarkMode
+                                    } else {
+                                        Icons.Filled.LightMode
+                                    }
+                                },
+                                contentDescription = "Toggle Theme"
                             )
                         }
                         // Settings Button
