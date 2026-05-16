@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "anwar.mlsa.eventsregistration"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
