@@ -40,9 +40,9 @@ A comprehensive Android application designed to streamline the process of managi
 
 ## 📸 Screenshots
 
-| Home Screen | Event Details | Registration |
-|:-----------:|:-------------:|:------------:|
-| ![Home](path/to/screenshot1.png) | ![Details](path/to/screenshot2.png) | ![Register](path/to/screenshot3.png) |
+|                    Home Screen                     |           Settings Screen            | Registration |
+|:--------------------------------------------------:|:------------------------------------:|:------------:|
+| ![Home](app/src/main/res/drawable/screenshot1.png) | ![Settings](app/src/main/res/drawable/screenshot2.png) | ![Register](app/src/main/res/drawable/screenshot3.png) |
 
 ## 🤝 Contributing
 
