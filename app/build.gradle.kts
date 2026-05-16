@@ -1,3 +1,14 @@
+import java.util.Properties
+
+val localProps = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        localPropsFile.inputStream().use { load(it) }
+    }
+}
+
+fun propOrEmpty(key: String): String = (localProps.getProperty(key) ?: "").trim()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,6 +27,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "HEDERA_ACCOUNT_ID", "\"${propOrEmpty("HEDERA_ACCOUNT_ID")}\"")
+        buildConfigField("String", "HEDERA_PRIVATE_KEY", "\"${propOrEmpty("HEDERA_PRIVATE_KEY")}\"")
+        buildConfigField("String", "HEDERA_TOPIC_ID", "\"${propOrEmpty("HEDERA_TOPIC_ID")}\"")
     }
 
     buildTypes {
@@ -70,8 +84,10 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -99,7 +115,12 @@ dependencies {
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    
+
+    // Hedera SDK
+    implementation(libs.hedera.sdk)
+    implementation(libs.grpc.okhttp)
+    // Guava for ListenableFuture used by CameraX
+    implementation(libs.guava)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

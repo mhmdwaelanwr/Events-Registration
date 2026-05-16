@@ -3,11 +3,14 @@ package anwar.mlsa.eventsregistration.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anwar.mlsa.eventsregistration.data.MarkAttendanceRequest
+import anwar.mlsa.eventsregistration.Hedera
 import anwar.mlsa.eventsregistration.network.RetrofitClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class DarkModeConfig {
     SYSTEM, LIGHT, DARK
@@ -67,10 +70,19 @@ class AttendanceViewModel : ViewModel() {
                     val body = response.body()
                     if (body != null) {
                         if (body.success) {
-                             _uiState.value = AttendanceState.Success(
-                                message = body.message ?: "Attendance marked successfully",
-                                registrationId = registrationId
-                            )
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    Hedera.submitRegistrationId(registrationId)
+                                }
+                                _uiState.value = AttendanceState.Success(
+                                    message = body.message ?: "Attendance marked successfully",
+                                    registrationId = registrationId
+                                )
+                            } catch (e: Exception) {
+                                _uiState.value = AttendanceState.Error(
+                                    "Hedera submit failed: ${e.localizedMessage}"
+                                )
+                            }
                         } else {
                             if (body.message?.contains("already registered", ignoreCase = true) == true ||
                                 body.message?.contains("duplicate", ignoreCase = true) == true ||

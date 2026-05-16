@@ -18,6 +18,11 @@ A comprehensive Android application designed to streamline the process of managi
 *   **Networking:** Retrofit / OkHttp
 *   **Database:** Room Database / SQLite
 *   **Asynchronous Programming:** Coroutines / RxJava
+*   **Blockchain Integration:** Hedera
+
+## 🔗 Hedera Integration
+
+See `docs/HEDERA.md` for the Hedera Consensus Service workflow, configuration, and troubleshooting notes.
 
 ## 🚀 Getting Started
 
