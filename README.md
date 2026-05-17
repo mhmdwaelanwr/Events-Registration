@@ -4,11 +4,11 @@ A secure Android event registration app that allows users to browse events, regi
 
 ## 📥 Download
 
-Download the latest official APK from GitHub Releases:
+Download the latest official APK from **GitHub Releases**:
 
 [Download Latest Release](https://github.com/mhmdwaelanwr/Events-Registration/releases/latest)
 
-Recommended APK for most modern Android devices:
+**Recommended** APK for most modern Android devices:
 
 `app-arm64-v8a-release.apk`
 
@@ -21,7 +21,7 @@ Recommended APK for most modern Android devices:
 
 </div>
 
-For older 32-bit Android devices, use:
+For older **32-bit** Android devices, use:
 
 `app-armeabi-v7a-release.apk`
 
