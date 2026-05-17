@@ -72,6 +72,12 @@ Download the latest official APK from **GitHub Releases**:
 
 See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configuration, and troubleshooting notes.
 
+## ⚠️ Blockchain Usage Notice
+
+This project uses blockchain technology only for **educational and technical demonstration purposes**, specifically for event attendance verification and tamper-resistant tracking.
+
+This project does **not** provide cryptocurrency trading, investment services, token issuance, wallets, exchanges, financial speculation, or any crypto-asset promotion.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -119,6 +125,10 @@ Contributions are welcome! Please follow these steps:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔐 Security
+
+If you discover a security vulnerability, please report it privately. See [SECURITY.md](SECURITY.md) for details.
 
 ## 📫 Connect With Me
 
