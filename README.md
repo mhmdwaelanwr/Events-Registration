@@ -1,6 +1,29 @@
-# MLSA Egypt Events Registration
+<div align="center">
 
-A secure Android event registration app that allows users to browse events, register for tickets, manage digital passes, and verify attendance using QR codes and Hedera blockchain tracking.
+  <img src="app/src/main/res/drawable/light_mode.png" alt="MLSA Egypt Events Registration Logo" width="140" />
+
+  <h1>MLSA Egypt Events Registration</h1>
+
+  <p>
+    A secure Android event registration app for browsing events, registering tickets,
+    managing digital passes, and verifying attendance using QR codes and Hedera blockchain tracking.
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/github/v/release/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=release" alt="Release" />
+    <img src="https://img.shields.io/github/downloads/mhmdwaelanwr/Events-Registration/total?style=for-the-badge&label=downloads" alt="Downloads" />
+    <img src="https://img.shields.io/github/repo-size/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=repo%20size" alt="Repo Size" />
+    <img src="https://img.shields.io/github/stars/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=stars" alt="Stars" />
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin Android" />
+    <img src="https://img.shields.io/badge/Architecture-MVVM-02569B?style=for-the-badge" alt="MVVM" />
+    <img src="https://img.shields.io/badge/Blockchain-Hedera-000000?style=for-the-badge" alt="Hedera" />
+    <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
+  </p>
+
+</div>
 
 ## 📥 Download
 
