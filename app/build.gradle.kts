@@ -31,6 +31,7 @@ android {
         buildConfigField("String", "HEDERA_PRIVATE_KEY", "\"${propOrEmpty("HEDERA_PRIVATE_KEY")}\"")
         buildConfigField("String", "HEDERA_TOPIC_ID", "\"${propOrEmpty("HEDERA_TOPIC_ID")}\"")
         buildConfigField("String", "BASE_URL", "\"${propOrEmpty("BASE_URL")}\"")
+        buildConfigField("String", "APP_ACCESS_KEY", "\"${propOrEmpty("APP_ACCESS_KEY")}\"")
     }
 
     buildTypes {

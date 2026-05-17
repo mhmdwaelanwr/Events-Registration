@@ -6,6 +6,7 @@ import androidx.security.crypto.MasterKey
 
 object SecurityManager {
     private const val PREFS_NAME = "secure_prefs"
+    private const val IS_AUTHORIZED_KEY = "is_authorized"
 
     private fun getEncryptedPrefs(context: Context) = EncryptedSharedPreferences.create(
         context,
@@ -28,6 +29,7 @@ object SecurityManager {
                 putString("HEDERA_PRIVATE_KEY", BuildConfig.HEDERA_PRIVATE_KEY)
                 putString("HEDERA_TOPIC_ID", BuildConfig.HEDERA_TOPIC_ID)
                 putString("BASE_URL", BuildConfig.BASE_URL)
+                putString("APP_ACCESS_KEY", BuildConfig.APP_ACCESS_KEY)
                 apply()
             }
         }
@@ -41,7 +43,16 @@ object SecurityManager {
             "HEDERA_PRIVATE_KEY" -> BuildConfig.HEDERA_PRIVATE_KEY
             "HEDERA_TOPIC_ID" -> BuildConfig.HEDERA_TOPIC_ID
             "BASE_URL" -> BuildConfig.BASE_URL
+            "APP_ACCESS_KEY" -> BuildConfig.APP_ACCESS_KEY
             else -> ""
         }
+    }
+
+    fun isAuthorized(context: Context): Boolean {
+        return getEncryptedPrefs(context).getBoolean(IS_AUTHORIZED_KEY, false)
+    }
+
+    fun setAuthorized(context: Context, authorized: Boolean) {
+        getEncryptedPrefs(context).edit().putBoolean(IS_AUTHORIZED_KEY, authorized).apply()
     }
 }

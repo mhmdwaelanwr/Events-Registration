@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import anwar.mlsa.eventsregistration.ui.SettingsScreen
@@ -100,142 +101,233 @@ enum class Screen {
     SCANNING, SETTINGS
 }
 
+@Composable
+fun AccessKeyDialog(onAuthorized: () -> Unit) {
+    var key by remember { mutableStateOf("") }
+    var isError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    Dialog(
+        onDismissRequest = { }, // Prevent dismissal by clicking outside
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    "Access Required",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Text(
+                    "Please enter the app access key to continue.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = key,
+                    onValueChange = { 
+                        key = it
+                        isError = false 
+                    },
+                    label = { Text("Access Key") },
+                    singleLine = true,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text("Incorrect access key. Please try again.")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Button(
+                    onClick = {
+                        val correctKey = SecurityManager.getConfig(context, "APP_ACCESS_KEY")
+                        if (key == correctKey) {
+                            onAuthorized()
+                        } else {
+                            isError = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Verify & Enter")
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendanceApp(viewModel: AttendanceViewModel) {
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
-    val uiState by viewModel.uiState.collectAsState()
-    val settingsState by viewModel.settingsState.collectAsState()
-    val isSystemDark = isSystemInDarkTheme()
-    val isDarkTheme = when (settingsState.darkMode) {
-        DarkModeConfig.SYSTEM -> isSystemDark
-        DarkModeConfig.LIGHT -> false
-        DarkModeConfig.DARK -> true
-    }
-    var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
+    var isAuthorized by remember { mutableStateOf(SecurityManager.isAuthorized(context)) }
 
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-        )
+    if (!isAuthorized) {
+        AccessKeyDialog(onAuthorized = {
+            SecurityManager.setAuthorized(context, true)
+            isAuthorized = true
+        })
     }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            hasCameraPermission = granted
+    // Only show content if authorized
+    if (isAuthorized) {
+        val snackbarHostState = remember { SnackbarHostState() }
+        val uiState by viewModel.uiState.collectAsState()
+        val settingsState by viewModel.settingsState.collectAsState()
+        val isSystemDark = isSystemInDarkTheme()
+        val isDarkTheme = when (settingsState.darkMode) {
+            DarkModeConfig.SYSTEM -> isSystemDark
+            DarkModeConfig.LIGHT -> false
+            DarkModeConfig.DARK -> true
         }
-    )
+        var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
 
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
-            launcher.launch(Manifest.permission.CAMERA)
+        var hasCameraPermission by remember {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+            )
         }
-    }
 
-    if (currentScreen == Screen.SETTINGS) {
-        SettingsScreen(
-            viewModel = viewModel,
-            settingsState = settingsState,
-            onBack = { currentScreen = Screen.SCANNING }
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                hasCameraPermission = granted
+            }
         )
-    } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("MLSA Egypt Attendance") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    actions = {
-                        // Dark Mode Toggle
-                        IconButton(onClick = {
-                            val newMode = if (isDarkTheme) {
-                                DarkModeConfig.LIGHT
-                            } else {
-                                DarkModeConfig.DARK
+
+        LaunchedEffect(Unit) {
+            if (!hasCameraPermission) {
+                launcher.launch(Manifest.permission.CAMERA)
+            }
+        }
+
+        if (currentScreen == Screen.SETTINGS) {
+            SettingsScreen(
+                viewModel = viewModel,
+                settingsState = settingsState,
+                onBack = { currentScreen = Screen.SCANNING }
+            )
+        } else {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("MLSA Egypt Attendance") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        actions = {
+                            // Dark Mode Toggle
+                            IconButton(onClick = {
+                                val newMode = if (isDarkTheme) {
+                                    DarkModeConfig.LIGHT
+                                } else {
+                                    DarkModeConfig.DARK
+                                }
+                                viewModel.updateDarkMode(newMode)
+                            }) {
+                                Icon(
+                                    imageVector = when (settingsState.darkMode) {
+                                        DarkModeConfig.DARK -> Icons.Filled.DarkMode
+                                        DarkModeConfig.LIGHT -> Icons.Filled.LightMode
+                                        DarkModeConfig.SYSTEM -> if (isSystemDark) {
+                                            Icons.Filled.DarkMode
+                                        } else {
+                                            Icons.Filled.LightMode
+                                        }
+                                    },
+                                    contentDescription = "Toggle Theme"
+                                )
                             }
-                            viewModel.updateDarkMode(newMode)
-                        }) {
-                            Icon(
-                                imageVector = when (settingsState.darkMode) {
-                                    DarkModeConfig.DARK -> Icons.Filled.DarkMode
-                                    DarkModeConfig.LIGHT -> Icons.Filled.LightMode
-                                    DarkModeConfig.SYSTEM -> if (isSystemDark) {
-                                        Icons.Filled.DarkMode
-                                    } else {
-                                        Icons.Filled.LightMode
-                                    }
-                                },
-                                contentDescription = "Toggle Theme"
+                            // Settings Button
+                            IconButton(onClick = { currentScreen = Screen.SETTINGS }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
+                        }
+                    )
+                },
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    if (hasCameraPermission) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                        ) {
+                            ScanningScreen(
+                                viewModel = viewModel,
+                                uiState = uiState,
+                                hapticEnabled = settingsState.hapticEnabled
                             )
                         }
-                        // Settings Button
-                        IconButton(onClick = { currentScreen = Screen.SETTINGS }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Camera permission is required to scan QR codes.")
                         }
-                    }
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                if (hasCameraPermission) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                    ) {
-                        ScanningScreen(
-                            viewModel = viewModel,
-                            uiState = uiState,
-                            hapticEnabled = settingsState.hapticEnabled
-                        )
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Camera permission is required to scan QR codes.")
                     }
                 }
             }
-        }
 
-        // Handle UI State for Feedback
-        when (val state = uiState) {
-            is AttendanceState.Success -> {
-                ResultDialog(
-                    type = ResultType.SUCCESS,
-                    message = "Success: ${state.message}\nID: ${state.registrationId}",
-                    onDismiss = { viewModel.resetState() }
-                )
+            // Handle UI State for Feedback
+            when (val state = uiState) {
+                is AttendanceState.Success -> {
+                    ResultDialog(
+                        type = ResultType.SUCCESS,
+                        message = "Success: ${state.message}\nID: ${state.registrationId}",
+                        onDismiss = { viewModel.resetState() }
+                    )
+                }
+                is AttendanceState.AlreadyRegistered -> {
+                    ResultDialog(
+                        type = ResultType.ALREADY_REGISTERED,
+                        message = "${state.message}\nID: ${state.registrationId}",
+                        onDismiss = { viewModel.resetState() }
+                    )
+                }
+                is AttendanceState.Error -> {
+                    ResultDialog(
+                        type = ResultType.ERROR,
+                        message = state.message,
+                        onDismiss = { viewModel.resetState() }
+                    )
+                }
+                else -> {}
             }
-            is AttendanceState.AlreadyRegistered -> {
-                ResultDialog(
-                    type = ResultType.ALREADY_REGISTERED,
-                    message = "${state.message}\nID: ${state.registrationId}",
-                    onDismiss = { viewModel.resetState() }
-                )
-            }
-            is AttendanceState.Error -> {
-                ResultDialog(
-                    type = ResultType.ERROR,
-                    message = state.message,
-                    onDismiss = { viewModel.resetState() }
-                )
-            }
-            else -> {}
         }
     }
 }
