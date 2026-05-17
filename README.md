@@ -16,6 +16,15 @@ For older 32-bit Android devices, use:
 
 `app-armeabi-v7a-release.apk`
 
+<div align="center">
+
+  <a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-arm64-v8a-release.apk">
+    <img src="https://img.shields.io/badge/Download-APK-2ea44f?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+
+</div>
+
+
 ## 📱 Features
 
 *   **Event Browsing:** View a list of upcoming events with detailed descriptions, dates, and locations.
