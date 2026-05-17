@@ -86,12 +86,20 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Contact
+## 📫 Connect With Me
 
-**Mohamed Anwar**
+<div align="center">
 
-For questions, feedback, or collaboration opportunities:
+  <a href="https://github.com/mhmdwaelanwr">
+    <img src="https://img.shields.io/badge/GitHub-mhmdwaelanwr-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
 
-- **GitHub:** [@mhmdwaelanwr](https://github.com/mhmdwaelanwr)
-- **LinkedIn:** [Mohamed Wael Anwar](https://linkedin.com/in/mhmdwaelanwr)
-- **Email:** [mhmdwaelanwr@gmail.com](mailto:mhmdwaelanwr@gmail.com)
+  <a href="https://www.linkedin.com/in/mhmdwaelanwr">
+    <img src="https://img.shields.io/badge/LinkedIn-mhmdwaelanwr-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
+  </a>
+
+  <a href="mailto:mhmdwaelanwr@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Contact_Me-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
+  </a>
+
+</div>
