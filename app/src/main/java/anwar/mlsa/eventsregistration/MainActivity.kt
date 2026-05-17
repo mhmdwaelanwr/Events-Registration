@@ -1,6 +1,8 @@
 package anwar.mlsa.eventsregistration
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -17,7 +20,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -31,6 +33,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,12 +52,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import anwar.mlsa.eventsregistration.ui.SettingsScreen
-import anwar.mlsa.eventsregistration.ui.theme.DarkMode
-import anwar.mlsa.eventsregistration.ui.theme.FlashOff
-import anwar.mlsa.eventsregistration.ui.theme.FlashOn
-import anwar.mlsa.eventsregistration.ui.theme.LightMode
 import anwar.mlsa.eventsregistration.ui.theme.MLSAEgyptEventsRegistrationTheme
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceState
 import anwar.mlsa.eventsregistration.viewmodel.AttendanceViewModel
@@ -70,7 +70,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Seed the encrypted configuration from BuildConfig to Keystore-backed storage
         SecurityManager.seedConfigIfNeeded(applicationContext)
         
         enableEdgeToEdge()
@@ -106,9 +105,10 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
     var key by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
 
     Dialog(
-        onDismissRequest = { }, // Prevent dismissal by clicking outside
+        onDismissRequest = { },
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
     ) {
         Card(
@@ -152,6 +152,20 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                     label = { Text("Access Key") },
                     singleLine = true,
                     isError = isError,
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val clipData = clipboardManager.primaryClip
+                            if (clipData != null && clipData.itemCount > 0) {
+                                val textToPaste = clipData.getItemAt(0).text?.toString() ?: ""
+                                if (textToPaste.isNotBlank()) {
+                                    key = textToPaste
+                                    isError = false
+                                }
+                            }
+                        }) {
+                            Icon(imageVector = Icons.Filled.ContentPaste, contentDescription = "Paste")
+                        }
+                    },
                     supportingText = {
                         if (isError) {
                             Text("Incorrect access key. Please try again.")
@@ -193,9 +207,7 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
         })
     }
 
-    // Only show content if authorized
     if (isAuthorized) {
-        val snackbarHostState = remember { SnackbarHostState() }
         val uiState by viewModel.uiState.collectAsState()
         val settingsState by viewModel.settingsState.collectAsState()
         val isSystemDark = isSystemInDarkTheme()
@@ -244,7 +256,6 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         actions = {
-                            // Dark Mode Toggle
                             IconButton(onClick = {
                                 val newMode = if (isDarkTheme) {
                                     DarkModeConfig.LIGHT
@@ -266,14 +277,12 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                                     contentDescription = "Toggle Theme"
                                 )
                             }
-                            // Settings Button
                             IconButton(onClick = { currentScreen = Screen.SETTINGS }) {
                                 Icon(Icons.Default.Settings, contentDescription = "Settings")
                             }
                         }
                     )
-                },
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                }
             ) { innerPadding ->
                 Column(
                     modifier = Modifier
@@ -303,7 +312,6 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                 }
             }
 
-            // Handle UI State for Feedback
             when (val state = uiState) {
                 is AttendanceState.Success -> {
                     ResultDialog(
@@ -332,6 +340,7 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
 fun ScanningScreen(
     viewModel: AttendanceViewModel,
@@ -344,13 +353,24 @@ fun ScanningScreen(
 
     LaunchedEffect(uiState) {
         if (hapticEnabled && uiState !is AttendanceState.Idle && uiState !is AttendanceState.Loading) {
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(200)
+            }
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Camera Preview
         CameraPreview(
             torchEnabled = torchEnabled,
             onBarcodeDetected = { code ->
@@ -360,17 +380,14 @@ fun ScanningScreen(
             }
         )
 
-        // 2. Dimming Layer
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.5f))
         )
 
-        // 3. Scanner Overlay (Animated)
         ScannerOverlay(modifier = Modifier.align(Alignment.Center))
 
-        // 4. Flash Button (Enhanced Design)
         FloatingActionButton(
             onClick = { torchEnabled = !torchEnabled },
             modifier = Modifier
@@ -380,13 +397,10 @@ fun ScanningScreen(
             containerColor = if (torchEnabled) Color(0xFFFFD700) else Color.White,
             contentColor = if (torchEnabled) Color.Black else Color.Gray
         ) {
-            Icon(
-                imageVector = if (torchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                contentDescription = "Toggle Flash"
-            )
+            val icon = if (torchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff
+            Icon(imageVector = icon, contentDescription = "Toggle Flash")
         }
 
-        // 5. Status Bar (Capsule Design)
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -417,7 +431,6 @@ fun ScanningScreen(
             )
         }
 
-        // 6. Manual Entry (Floating Card)
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -466,7 +479,6 @@ fun ScanningScreen(
             }
         }
         
-        // Loading Overlay
         if (uiState is AttendanceState.Loading) {
              Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha=0.6f)), contentAlignment = Alignment.Center) {
                  CircularProgressIndicator(color = Color.White)
@@ -499,7 +511,6 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
             val cornerLength = 30.dp.toPx()
             val color = Color(0xFF00BCF2)
 
-            // Top Left
             drawPath(
                 path = Path().apply {
                     moveTo(0f, cornerLength)
@@ -509,7 +520,6 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
                 color = color,
                 style = Stroke(width = strokeWidth)
             )
-            // Top Right
             drawPath(
                 path = Path().apply {
                     moveTo(size.width - cornerLength, 0f)
@@ -519,7 +529,6 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
                 color = color,
                 style = Stroke(width = strokeWidth)
             )
-            // Bottom Left
             drawPath(
                 path = Path().apply {
                     moveTo(0f, size.height - cornerLength)
@@ -529,7 +538,6 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
                 color = color,
                 style = Stroke(width = strokeWidth)
             )
-            // Bottom Right
             drawPath(
                 path = Path().apply {
                     moveTo(size.width - cornerLength, size.height)
@@ -568,7 +576,6 @@ fun ResultDialog(
 ) {
     val context = LocalContext.current
 
-    // Only auto-dismiss for success or already registered, keep error persistent until action
     if (type != ResultType.ERROR) {
         LaunchedEffect(Unit) {
             delay(2500)
@@ -602,9 +609,7 @@ fun ResultDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = backgroundColor
-            ),
+            colors = CardDefaults.cardColors(containerColor = backgroundColor),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
@@ -641,16 +646,14 @@ fun ResultDialog(
                         Button(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:")
+                                    data = "mailto:".toUri()
                                     putExtra(Intent.EXTRA_EMAIL, arrayOf("moanwarpcz@gmail.com"))
                                     putExtra(Intent.EXTRA_SUBJECT, "EventSync Error Report")
                                     putExtra(Intent.EXTRA_TEXT, "Error Details:\n$message")
                                 }
                                 try {
                                     context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    // Handle case where no email app is found
-                                }
+                                } catch (_: Exception) { }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
                         ) {
@@ -661,13 +664,11 @@ fun ResultDialog(
                             onClick = {
                                 val url = "https://api.whatsapp.com/send?phone=+201010373387&text=${Uri.encode("Error Report:\n$message")}"
                                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    data = Uri.parse(url)
+                                    data = url.toUri()
                                 }
                                 try {
                                     context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    // Handle case where WhatsApp is not installed
-                                }
+                                } catch (_: Exception) { }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
                         ) {
@@ -767,8 +768,7 @@ class QrCodeAnalyzer(
                         }
                     }
                 }
-                .addOnFailureListener {
-                }
+                .addOnFailureListener { }
                 .addOnCompleteListener {
                     imageProxy.close()
                 }
