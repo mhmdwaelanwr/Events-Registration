@@ -6,28 +6,26 @@ A secure Android event registration app that allows users to browse events, regi
 
 Download the latest official APK from **GitHub Releases**:
 
-[Download Latest Release](https://github.com/mhmdwaelanwr/Events-Registration/releases/latest)
-
-**Recommended** APK for most modern Android devices:
-
-`app-arm64-v8a-release.apk`
-
-
 <div align="center">
 
   <a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-arm64-v8a-release.apk">
-    <img src="https://img.shields.io/badge/Download-APK-2ea44f?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+    <img src="https://img.shields.io/badge/Download-64--bit_APK-2EA44F?style=for-the-badge&logo=android&logoColor=white" alt="Download 64-bit APK" />
+  </a>
+
+  <a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-armeabi-v7a-release.apk">
+    <img src="https://img.shields.io/badge/Download-32--bit_APK-F97316?style=for-the-badge&logo=android&logoColor=white" alt="Download 32-bit APK" />
   </a>
 
 </div>
 
-For older **32-bit** Android devices, use:
+<br>
 
-`app-armeabi-v7a-release.apk`
+| APK | Recommended for |
+|---|---|
+| `app-arm64-v8a-release.apk` | Most modern Android devices |
+| `app-armeabi-v7a-release.apk` | Older 32-bit Android devices |
 
-<a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-armeabi-v7a-release.apk">
-  <img src="https://img.shields.io/badge/Download-32--bit_APK-orange?style=for-the-badge&logo=android&logoColor=white" alt="Download 32-bit APK" />
-</a>
+> For most users, the **64-bit APK** is recommended.
 
 ## 📱 Features
 
