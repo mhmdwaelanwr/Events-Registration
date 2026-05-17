@@ -30,6 +30,7 @@ android {
         buildConfigField("String", "HEDERA_ACCOUNT_ID", "\"${propOrEmpty("HEDERA_ACCOUNT_ID")}\"")
         buildConfigField("String", "HEDERA_PRIVATE_KEY", "\"${propOrEmpty("HEDERA_PRIVATE_KEY")}\"")
         buildConfigField("String", "HEDERA_TOPIC_ID", "\"${propOrEmpty("HEDERA_TOPIC_ID")}\"")
+        buildConfigField("String", "BASE_URL", "\"${propOrEmpty("BASE_URL")}\"")
     }
 
     buildTypes {
@@ -121,6 +122,9 @@ dependencies {
     implementation(libs.grpc.okhttp)
     // Guava for ListenableFuture used by CameraX
     implementation(libs.guava)
+
+    // Security - Added for EncryptedSharedPreferences
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

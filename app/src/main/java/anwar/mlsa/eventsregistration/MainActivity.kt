@@ -68,6 +68,10 @@ import java.util.concurrent.Executors
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Seed the encrypted configuration from BuildConfig to Keystore-backed storage
+        SecurityManager.seedConfigIfNeeded(applicationContext)
+        
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
@@ -75,7 +79,7 @@ class MainActivity : ComponentActivity() {
                 SettingsPreferences.from(context.applicationContext)
             }
             val viewModel: AttendanceViewModel = viewModel(
-                factory = AttendanceViewModelFactory(settingsPreferences)
+                factory = AttendanceViewModelFactory(application, settingsPreferences)
             )
             val settingsState by viewModel.settingsState.collectAsState()
 

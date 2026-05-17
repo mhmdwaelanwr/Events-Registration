@@ -1,5 +1,7 @@
 package anwar.mlsa.eventsregistration.network
 
+import android.content.Context
+import anwar.mlsa.eventsregistration.SecurityManager
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -10,11 +12,10 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 object RetrofitClient {
-    private const val BASE_URL = "https://mlsaegypt.org/api/"
+    private var instance: AttendanceService? = null
 
     private fun getUnsafeOkHttpClient(): OkHttpClient {
         return try {
-            // Create a trust manager that does not validate certificate chains
             val trustAllCerts = arrayOf<TrustManager>(
                 object : X509TrustManager {
                     override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
@@ -23,11 +24,8 @@ object RetrofitClient {
                 }
             )
 
-            // Install the all-trusting trust manager
             val sslContext = SSLContext.getInstance("SSL")
             sslContext.init(null, trustAllCerts, SecureRandom())
-
-            // Create an ssl socket factory with our all-trusting manager
             val sslSocketFactory = sslContext.socketFactory
 
             OkHttpClient.Builder()
@@ -39,9 +37,16 @@ object RetrofitClient {
         }
     }
 
-    val instance: AttendanceService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+    fun getInstance(context: Context): AttendanceService {
+        return instance ?: synchronized(this) {
+            instance ?: buildRetrofit(context).also { instance = it }
+        }
+    }
+
+    private fun buildRetrofit(context: Context): AttendanceService {
+        val baseUrl = SecurityManager.getConfig(context, "BASE_URL")
+        return Retrofit.Builder()
+            .baseUrl(if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/")
             .client(getUnsafeOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()

@@ -1,5 +1,7 @@
 package anwar.mlsa.eventsregistration.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -32,8 +34,9 @@ sealed class AttendanceState {
 }
 
 class AttendanceViewModel(
+    application: Application,
     private val settingsPreferences: SettingsPreferences
-) : ViewModel() {
+) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow<AttendanceState>(AttendanceState.Idle)
     val uiState: StateFlow<AttendanceState> = _uiState.asStateFlow()
 
@@ -71,14 +74,15 @@ class AttendanceViewModel(
         viewModelScope.launch {
             _uiState.value = AttendanceState.Loading
             try {
-                val response = RetrofitClient.instance.markAttendance(MarkAttendanceRequest(registrationId))
+                val context = getApplication<Application>().applicationContext
+                val response = RetrofitClient.getInstance(context).markAttendance(MarkAttendanceRequest(registrationId))
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null) {
                         if (body.success) {
                             try {
                                 withContext(Dispatchers.IO) {
-                                    Hedera.submitRegistrationId(registrationId)
+                                    Hedera.submitRegistrationId(context, registrationId)
                                 }
                                 _uiState.value = AttendanceState.Success(
                                     message = body.message ?: "Attendance marked successfully",
@@ -126,14 +130,14 @@ class AttendanceViewModel(
 }
 
 class AttendanceViewModelFactory(
+    private val application: Application,
     private val settingsPreferences: SettingsPreferences
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AttendanceViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AttendanceViewModel(settingsPreferences) as T
+            return AttendanceViewModel(application, settingsPreferences) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-

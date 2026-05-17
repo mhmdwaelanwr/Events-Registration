@@ -1,5 +1,6 @@
 package anwar.mlsa.eventsregistration
 
+import android.content.Context
 import com.hedera.hashgraph.sdk.AccountId
 import com.hedera.hashgraph.sdk.Client
 import com.hedera.hashgraph.sdk.PrivateKey
@@ -8,46 +9,27 @@ import com.hedera.hashgraph.sdk.TopicId
 import com.hedera.hashgraph.sdk.TopicMessageSubmitTransaction
 
 object Hedera {
-    @JvmStatic
-    fun main(args: Array<String>) {
+    
+    fun submitRegistrationId(context: Context, registrationId: String) {
         var client: Client? = null
         try {
-            val accountId = AccountId.fromString(requireConfig("HEDERA_ACCOUNT_ID"))
-            val accountPrivateKey = parsePrivateKey(requireConfig("HEDERA_PRIVATE_KEY"))
+            val accountId = AccountId.fromString(requireConfig(context, "HEDERA_ACCOUNT_ID"))
+            val accountPrivateKey = parsePrivateKey(requireConfig(context, "HEDERA_PRIVATE_KEY"))
 
             client = Client.forTestnet()
             client.setOperator(accountId, accountPrivateKey)
 
-            val registrationId = args.firstOrNull()
-                ?: System.getenv("HEDERA_REGISTRATION_ID")
-                ?: error("Missing registration_id. Provide as arg or HEDERA_REGISTRATION_ID.")
-
-            submitMessage(client, registrationId)
+            submitMessage(context, client, registrationId)
         } finally {
             client?.close()
         }
     }
 
-    fun submitRegistrationId(registrationId: String) {
+    fun createTopic(context: Context): TopicId {
         var client: Client? = null
         try {
-            val accountId = AccountId.fromString(requireConfig("HEDERA_ACCOUNT_ID"))
-            val accountPrivateKey = parsePrivateKey(requireConfig("HEDERA_PRIVATE_KEY"))
-
-            client = Client.forTestnet()
-            client.setOperator(accountId, accountPrivateKey)
-
-            submitMessage(client, registrationId)
-        } finally {
-            client?.close()
-        }
-    }
-
-    fun createTopic(): TopicId {
-        var client: Client? = null
-        try {
-            val accountId = AccountId.fromString(requireConfig("HEDERA_ACCOUNT_ID"))
-            val accountPrivateKey = parsePrivateKey(requireConfig("HEDERA_PRIVATE_KEY"))
+            val accountId = AccountId.fromString(requireConfig(context, "HEDERA_ACCOUNT_ID"))
+            val accountPrivateKey = parsePrivateKey(requireConfig(context, "HEDERA_PRIVATE_KEY"))
 
             client = Client.forTestnet()
             client.setOperator(accountId, accountPrivateKey)
@@ -68,7 +50,6 @@ object Hedera {
 
     private fun parsePrivateKey(rawKey: String): PrivateKey {
         val key = rawKey.trim().removePrefix("0x")
-        // Try generic parser first (handles DER/PEM/ED25519/ECDSA formats)
         return try {
             PrivateKey.fromString(key)
         } catch (_: Exception) {
@@ -80,8 +61,8 @@ object Hedera {
         }
     }
 
-    private fun submitMessage(client: Client, registrationId: String) {
-        val topicId = TopicId.fromString(requireConfig("HEDERA_TOPIC_ID"))
+    private fun submitMessage(context: Context, client: Client, registrationId: String) {
+        val topicId = TopicId.fromString(requireConfig(context, "HEDERA_TOPIC_ID"))
         val txTopicMessageSubmit = TopicMessageSubmitTransaction()
             .setTopicId(topicId)
             .setMessage(registrationId)
@@ -89,14 +70,9 @@ object Hedera {
         txTopicMessageSubmit.execute(client).getReceipt(client)
     }
 
-    private fun requireConfig(name: String): String {
-        val value = when (name) {
-            "HEDERA_ACCOUNT_ID" -> BuildConfig.HEDERA_ACCOUNT_ID
-            "HEDERA_PRIVATE_KEY" -> BuildConfig.HEDERA_PRIVATE_KEY
-            "HEDERA_TOPIC_ID" -> BuildConfig.HEDERA_TOPIC_ID
-            else -> ""
-        }.ifBlank { System.getenv(name).orEmpty() }
-
-        return value.ifBlank { error("Missing config: $name") }
+    private fun requireConfig(context: Context, name: String): String {
+        return SecurityManager.getConfig(context, name).ifBlank {
+            error("Missing config: $name")
+        }
     }
 }
