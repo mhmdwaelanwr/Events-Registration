@@ -106,7 +106,7 @@ enum class Screen {
 }
 
 @Composable
-fun AccessKeyDialog(onAuthorized: () -> Unit) {
+fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) {
     var key by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -144,7 +144,7 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                 )
                 
                 Text(
-                    "Please enter your Access key",
+                    "Please enter your access key to continue. This app uses dynamic remote authorization.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -201,28 +201,31 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                             val masterKey = SecurityManager.getConfig(context, "APP_ACCESS_KEY")
                             val remoteUrl = SecurityManager.getConfig(context, "REMOTE_CONFIG_URL")
                             
+                            var isMasterUsed = false
                             var isAuthorizedSuccess = false
                             
-                            // 1. Try checking against Remote Config first
-                            try {
-                                val remoteKey = withContext(Dispatchers.IO) {
-                                    URL(remoteUrl).readText().trim()
-                                }
-                                if (key == remoteKey) {
-                                    isAuthorizedSuccess = true
-                                }
-                            } catch (e: Exception) {
-                                Log.e("Auth", "Remote config fetch failed", e)
-                                // If remote fails, we skip to master key check below
-                            }
-                            
-                            // 2. Check against Master Key (Always works as fallback or bypass)
-                            if (!isAuthorizedSuccess && key == masterKey) {
+                            // 1. Check against Master Key first (Provides permanent immunity)
+                            if (key == masterKey) {
                                 isAuthorizedSuccess = true
+                                isMasterUsed = true
+                            } else {
+                                // 2. If not master, check Remote Config via Pastebin
+                                try {
+                                    val remoteKey = withContext(Dispatchers.IO) {
+                                        URL(remoteUrl).readText().trim()
+                                    }
+                                    if (key == remoteKey) {
+                                        isAuthorizedSuccess = true
+                                        isMasterUsed = false
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Auth", "Remote config fetch failed", e)
+                                    // If remote is unreachable, we don't authorize a regular key for the first time.
+                                }
                             }
                             
                             if (isAuthorizedSuccess) {
-                                onAuthorized()
+                                onAuthorized(isMasterUsed, key)
                             } else {
                                 isError = true
                             }
@@ -254,9 +257,34 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
     val context = LocalContext.current
     var isAuthorized by remember { mutableStateOf(SecurityManager.isAuthorized(context)) }
 
+    // Kill Switch Logic: Every time the app opens, verify remote key consistency
+    // EXCEPT if the user is authorized via the Master Key.
+    LaunchedEffect(Unit) {
+        if (isAuthorized && !SecurityManager.isMasterKeyUsed(context)) {
+            val remoteUrl = SecurityManager.getConfig(context, "REMOTE_CONFIG_URL")
+            val lastKeyUsed = SecurityManager.getLastKey(context)
+            try {
+                val remoteKey = withContext(Dispatchers.IO) {
+                    URL(remoteUrl).readText().trim()
+                }
+                if (remoteKey.isNotBlank() && lastKeyUsed != remoteKey) {
+                    // Remote key changed! Kick user out and force re-verification
+                    SecurityManager.setAuthorized(context, false)
+                    isAuthorized = false
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Access key expired. Please re-verify.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                // If offline or server error, allow staying authorized since they passed once before.
+                Log.e("Security", "Could not verify remote key, staying authorized offline")
+            }
+        }
+    }
+
     if (!isAuthorized) {
-        AccessKeyDialog(onAuthorized = {
-            SecurityManager.setAuthorized(context, true)
+        AccessKeyDialog(onAuthorized = { isMaster, keyUsed ->
+            SecurityManager.setAuthorized(context, true, isMaster, keyUsed)
             isAuthorized = true
         })
     }
@@ -471,6 +499,7 @@ fun ScanningScreen(
                 )
                 .padding(horizontal = 24.dp, vertical = 10.dp)
         ) {
+            @Suppress("UNUSED_VARIABLE")
             Text(
                 text = when (uiState) {
                     is AttendanceState.Idle -> "Scan QR Code"

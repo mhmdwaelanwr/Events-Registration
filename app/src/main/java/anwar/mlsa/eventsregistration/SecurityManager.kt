@@ -7,6 +7,8 @@ import androidx.security.crypto.MasterKey
 object SecurityManager {
     private const val PREFS_NAME = "secure_prefs"
     private const val IS_AUTHORIZED_KEY = "is_authorized"
+    private const val IS_MASTER_KEY_USED = "is_master_key_used"
+    private const val LAST_AUTHORIZED_KEY = "last_authorized_key"
 
     private fun getEncryptedPrefs(context: Context) = EncryptedSharedPreferences.create(
         context,
@@ -16,11 +18,6 @@ object SecurityManager {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    /**
-     * Seeds the encrypted storage with values from BuildConfig if they haven't been saved yet.
-     * This moves the keys from the compiled code (where they are vulnerable) into 
-     * Keystore-backed encrypted storage on the first run.
-     */
     fun seedConfigIfNeeded(context: Context) {
         val prefs = getEncryptedPrefs(context)
         if (!prefs.contains("HEDERA_PRIVATE_KEY")) {
@@ -38,7 +35,6 @@ object SecurityManager {
 
     fun getConfig(context: Context, key: String): String {
         val prefs = getEncryptedPrefs(context)
-        // Try to get from encrypted prefs first, fallback to BuildConfig if not seeded yet
         return prefs.getString(key, null) ?: when (key) {
             "HEDERA_ACCOUNT_ID" -> BuildConfig.HEDERA_ACCOUNT_ID
             "HEDERA_PRIVATE_KEY" -> BuildConfig.HEDERA_PRIVATE_KEY
@@ -50,11 +46,18 @@ object SecurityManager {
         }
     }
 
-    fun isAuthorized(context: Context): Boolean {
-        return getEncryptedPrefs(context).getBoolean(IS_AUTHORIZED_KEY, false)
-    }
+    fun isAuthorized(context: Context): Boolean = getEncryptedPrefs(context).getBoolean(IS_AUTHORIZED_KEY, false)
 
-    fun setAuthorized(context: Context, authorized: Boolean) {
-        getEncryptedPrefs(context).edit().putBoolean(IS_AUTHORIZED_KEY, authorized).apply()
+    fun isMasterKeyUsed(context: Context): Boolean = getEncryptedPrefs(context).getBoolean(IS_MASTER_KEY_USED, false)
+
+    fun getLastKey(context: Context): String = getEncryptedPrefs(context).getString(LAST_AUTHORIZED_KEY, "") ?: ""
+
+    fun setAuthorized(context: Context, authorized: Boolean, isMaster: Boolean = false, key: String = "") {
+        getEncryptedPrefs(context).edit().apply {
+            putBoolean(IS_AUTHORIZED_KEY, authorized)
+            putBoolean(IS_MASTER_KEY_USED, isMaster)
+            putString(LAST_AUTHORIZED_KEY, key)
+            apply()
+        }
     }
 }
