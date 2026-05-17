@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/mhmdwaelanwr/Events-Registration/main/app/src/main/res/drawable/light_mode.png" alt="MLSA Egypt Events Registration Logo" width="140" />
+  <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/light%20mode-05YmNthXDCSewvqNuDpfMqtQ2FNxfi.png" alt="MLSA Egypt Events Registration Logo" width="140" />
 
   <h1>MLSA Egypt Events Registration</h1>
 
