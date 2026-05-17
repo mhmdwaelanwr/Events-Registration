@@ -14,6 +14,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -63,7 +64,11 @@ import anwar.mlsa.eventsregistration.viewmodel.DarkModeConfig
 import anwar.mlsa.eventsregistration.data.SettingsPreferences
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URL
 import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
@@ -104,8 +109,10 @@ enum class Screen {
 fun AccessKeyDialog(onAuthorized: () -> Unit) {
     var key by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
+    val scope = rememberCoroutineScope()
 
     Dialog(
         onDismissRequest = { },
@@ -124,20 +131,20 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(
-                    Icons.Default.Lock,
+                    Icons.Default.VpnKey,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 
                 Text(
-                    "Access Required",
+                    "Security Verification",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
-                    "Please enter the app access key to continue.",
+                    "Please enter your Access key",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -152,9 +159,9 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                     label = { Text("Access Key") },
                     singleLine = true,
                     isError = isError,
+                    enabled = !isLoading,
                     trailingIcon = {
                         if (key.isEmpty()) {
-                            // أيقونة اللصق تظهر فقط لو الخانة فاضية
                             IconButton(onClick = {
                                 val clipData = clipboardManager.primaryClip
                                 if (clipData != null && clipData.itemCount > 0) {
@@ -168,7 +175,6 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                                 Icon(imageVector = Icons.Filled.ContentPaste, contentDescription = "Paste")
                             }
                         } else {
-                            // أيقونة المسح تظهر لما يكون فيه نص
                             IconButton(onClick = {
                                 key = ""
                                 isError = false
@@ -188,17 +194,54 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
 
                 Button(
                     onClick = {
-                        val correctKey = SecurityManager.getConfig(context, "APP_ACCESS_KEY")
-                        if (key == correctKey) {
-                            onAuthorized()
-                        } else {
-                            isError = true
+                        scope.launch {
+                            isLoading = true
+                            isError = false
+                            
+                            val masterKey = SecurityManager.getConfig(context, "APP_ACCESS_KEY")
+                            val remoteUrl = SecurityManager.getConfig(context, "REMOTE_CONFIG_URL")
+                            
+                            var isAuthorizedSuccess = false
+                            
+                            // 1. Try checking against Remote Config first
+                            try {
+                                val remoteKey = withContext(Dispatchers.IO) {
+                                    URL(remoteUrl).readText().trim()
+                                }
+                                if (key == remoteKey) {
+                                    isAuthorizedSuccess = true
+                                }
+                            } catch (e: Exception) {
+                                Log.e("Auth", "Remote config fetch failed", e)
+                                // If remote fails, we skip to master key check below
+                            }
+                            
+                            // 2. Check against Master Key (Always works as fallback or bypass)
+                            if (!isAuthorizedSuccess && key == masterKey) {
+                                isAuthorizedSuccess = true
+                            }
+                            
+                            if (isAuthorizedSuccess) {
+                                onAuthorized()
+                            } else {
+                                isError = true
+                            }
+                            isLoading = false
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isLoading && key.isNotBlank()
                 ) {
-                    Text("Verify & Enter")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Verify & Enter")
+                    }
                 }
             }
         }

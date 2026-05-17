@@ -30,6 +30,7 @@ object SecurityManager {
                 putString("HEDERA_TOPIC_ID", BuildConfig.HEDERA_TOPIC_ID)
                 putString("BASE_URL", BuildConfig.BASE_URL)
                 putString("APP_ACCESS_KEY", BuildConfig.APP_ACCESS_KEY)
+                putString("REMOTE_CONFIG_URL", BuildConfig.REMOTE_CONFIG_URL)
                 apply()
             }
         }
@@ -44,6 +45,7 @@ object SecurityManager {
             "HEDERA_TOPIC_ID" -> BuildConfig.HEDERA_TOPIC_ID
             "BASE_URL" -> BuildConfig.BASE_URL
             "APP_ACCESS_KEY" -> BuildConfig.APP_ACCESS_KEY
+            "REMOTE_CONFIG_URL" -> BuildConfig.REMOTE_CONFIG_URL
             else -> ""
         }
     }
