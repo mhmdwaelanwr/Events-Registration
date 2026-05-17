@@ -153,17 +153,28 @@ fun AccessKeyDialog(onAuthorized: () -> Unit) {
                     singleLine = true,
                     isError = isError,
                     trailingIcon = {
-                        IconButton(onClick = {
-                            val clipData = clipboardManager.primaryClip
-                            if (clipData != null && clipData.itemCount > 0) {
-                                val textToPaste = clipData.getItemAt(0).text?.toString() ?: ""
-                                if (textToPaste.isNotBlank()) {
-                                    key = textToPaste
-                                    isError = false
+                        if (key.isEmpty()) {
+                            // أيقونة اللصق تظهر فقط لو الخانة فاضية
+                            IconButton(onClick = {
+                                val clipData = clipboardManager.primaryClip
+                                if (clipData != null && clipData.itemCount > 0) {
+                                    val textToPaste = clipData.getItemAt(0).text?.toString() ?: ""
+                                    if (textToPaste.isNotBlank()) {
+                                        key = textToPaste
+                                        isError = false
+                                    }
                                 }
+                            }) {
+                                Icon(imageVector = Icons.Filled.ContentPaste, contentDescription = "Paste")
                             }
-                        }) {
-                            Icon(imageVector = Icons.Filled.ContentPaste, contentDescription = "Paste")
+                        } else {
+                            // أيقونة المسح تظهر لما يكون فيه نص
+                            IconButton(onClick = {
+                                key = ""
+                                isError = false
+                            }) {
+                                Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
+                            }
                         }
                     },
                     supportingText = {
