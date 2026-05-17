@@ -12,9 +12,6 @@ Recommended APK for most modern Android devices:
 
 `app-arm64-v8a-release.apk`
 
-For older 32-bit Android devices, use:
-
-`app-armeabi-v7a-release.apk`
 
 <div align="center">
 
@@ -24,6 +21,13 @@ For older 32-bit Android devices, use:
 
 </div>
 
+For older 32-bit Android devices, use:
+
+`app-armeabi-v7a-release.apk`
+
+<a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-armeabi-v7a-release.apk">
+  <img src="https://img.shields.io/badge/Download-32--bit_APK-orange?style=for-the-badge&logo=android&logoColor=white" alt="Download 32-bit APK" />
+</a>
 
 ## 📱 Features
 
