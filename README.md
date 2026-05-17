@@ -1,6 +1,20 @@
-# Events Registration App
+# MLSA Egypt Events Registration
 
-A comprehensive Android application designed to streamline the process of managing and registering for events. This app allows users to browse upcoming events, register for them, and manage their schedules efficiently.
+A secure Android event registration app that allows users to browse events, register for tickets, manage digital passes, and verify attendance using QR codes and Hedera blockchain tracking.
+
+## 📥 Download
+
+Download the latest official APK from GitHub Releases:
+
+[Download Latest Release](https://github.com/mhmdwaelanwr/Events-Registration/releases/latest)
+
+Recommended APK for most modern Android devices:
+
+`app-arm64-v8a-release.apk`
+
+For older 32-bit Android devices, use:
+
+`app-armeabi-v7a-release.apk`
 
 ## 📱 Features
 
@@ -14,7 +28,7 @@ A comprehensive Android application designed to streamline the process of managi
 
 *   **Language:** Kotlin / Java
 *   **Architecture:** MVVM (Model-View-ViewModel)
-*   **UI:** XML Layouts / Jetpack Compose
+*   **UI:** Jetpack Compose / XML Layouts
 *   **Networking:** Retrofit / OkHttp
 *   **Database:** Room Database / SQLite
 *   **Asynchronous Programming:** Coroutines / RxJava
@@ -36,7 +50,7 @@ See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configur
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/events-registration.git
+    git clone https://github.com/yourusername/Events-registration.git
     ```
 2.  Open the project in **Android Studio**.
 3.  Sync the project with Gradle files.
@@ -65,19 +79,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Mohamed Wael Anwar**  
-*   **GitHub:** [github.com/mhmdwaelanwr](https://github.com/mhmdwaelanwr)
+**Mohamed Anwar**
 
-*   **Email:** [mhmdwaelanwr@gmail.com](mailto:mhmdwaelanwr@gmail.com) | [mhmdwaelanwr@outlook.com](mailto:mhmdwaelanwr@outlook.com)
-*   **Phone:** +201010373387
-*   **WhatsApp / Skype:** 01010412724
+For questions, feedback, or collaboration opportunities:
 
-### Socials & Developer Profiles
-
-**Handle: `@mhmdwaelanwr`**
-*   **Dev:** GitLab, Google Dev, Gitea
-*   **Social:** LinkedIn, Instagram, Facebook, YouTube, TikTok, Threads, Snapchat
-*   **Chat/Media:** Discord, Twitch, Telegram, Spotify, Rave
-
-**Handle: `@mhmdwaelanwar`**
-*   Reddit, NGL, PayPal
+- **GitHub:** [@mhmdwaelanwr](https://github.com/mhmdwaelanwr)
+- **LinkedIn:** [Mohamed Wael Anwar](https://linkedin.com/in/mhmdwaelanwr)
+- **Email:** [mhmdwaelanwr@gmail.com](mailto:mhmdwaelanwr@gmail.com)
