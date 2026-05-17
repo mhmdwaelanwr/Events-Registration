@@ -50,7 +50,7 @@ See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configur
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/Events-registration.git
+    git clone https://github.com/mhmdwaelanwr/Events-Registration.git
     ```
 2.  Open the project in **Android Studio**.
 3.  Sync the project with Gradle files.
@@ -102,4 +102,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
     <img src="https://img.shields.io/badge/Email-Contact_Me-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
   </a>
 
+</div>
+
+
+---
+
+<div align="center">
+  Developed with ❤️ by <a href="https://github.com/mhmdwaelanwr">Mohamed Anwar</a>
 </div>
