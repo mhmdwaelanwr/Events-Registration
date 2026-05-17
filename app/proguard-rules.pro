@@ -1,28 +1,63 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Retrofit 2 rules
+# احتفظ بالـ Signatures والـ Annotations اللازمة لعمل الـ Reflection والـ Generics
+-keepattributes Signature, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, InnerClasses, EnclosingMethod, Exceptions
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# احتفظ بواجهات (Interfaces) الخاصة بـ Retrofit وطرقها (Methods)
+-keep @retrofit2.http.GET interface * { <methods>; }
+-keep @retrofit2.http.POST interface * { <methods>; }
+-keep @retrofit2.http.PUT interface * { <methods>; }
+-keep @retrofit2.http.DELETE interface * { <methods>; }
+-keep @retrofit2.http.PATCH interface * { <methods>; }
+-keep @retrofit2.http.HEAD interface * { <methods>; }
+-keep @retrofit2.http.OPTIONS interface * { <methods>; }
+-keep @retrofit2.http.HTTP interface * { <methods>; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# منع حذف أسماء البارامترات في دوال الـ interface
+-keepparameternames
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# قواعد Gson لضمان تحويل البيانات بشكل صحيح
+-keep class com.google.gson.** { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
 
-# Keep data classes for Gson
+# احتفظ بجميع موديلات البيانات (Data Models)
 -keep class anwar.mlsa.eventsregistration.data.** { *; }
 
-# Retrofit
--keepattributes Signature
--keepattributes Exceptions
+# احتفظ بجميع كلاسات الشبكة (Network interfaces)
+-keep interface anwar.mlsa.eventsregistration.network.** { *; }
+-keep class anwar.mlsa.eventsregistration.network.** { *; }
+
+# Callbacks and Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
+-keep class kotlin.coroutines.Continuation
+
+# قواعد إضافية لـ OkHttp و Retrofit
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-keepnames class retrofit2.Response
+
+# Hedera SDK, Grpc, and Protobuf Rules
+-keep class com.hedera.hashgraph.** { *; }
+-keep class io.grpc.** { *; }
+-keep class com.google.protobuf.** { *; }
+
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
+    *** getDefaultInstance();
+    *** newBuilder();
+    <fields>;
+}
+
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite$Builder {
+    <methods>;
+}
+
+-dontwarn com.hedera.hashgraph.**
+-dontwarn io.grpc.**
+-dontwarn com.google.protobuf.**
