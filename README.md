@@ -39,6 +39,7 @@ Event entrances need a fast tool with one job: confirm whether a registration is
 - HTTPS attendance validation via `POST /attendance/mark`.
 - Clear success, duplicate, validation, connection, and failure states.
 - Three-second duplicate-scan debounce.
+- Encrypted offline queue retried after authorized app start and the next successful online check-in.
 - Input trimming, control-character rejection, and length validation.
 - Staff access gate with local encrypted authorization state.
 - System, light, and dark appearance preferences.
@@ -71,6 +72,7 @@ The attendance API remains the source of truth. Hedera submission is optional an
 | CameraX + ML Kit | Preview lifecycle and barcode analysis |
 | Settings storage | Dark-mode and haptic preferences |
 | Security storage | Encrypted authorization state and runtime configuration |
+| Offline queue | Up to 100 unique pending IDs stored encrypted and retried safely |
 | Hedera adapter | Optional testnet topic-message submission |
 
 ## Technology
