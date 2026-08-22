@@ -3,6 +3,7 @@ package io.github.mhmdwaelanwr.eventcheckin.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -13,12 +14,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.AttendanceViewModel
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.DarkModeConfig
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.SettingsState
+import io.github.mhmdwaelanwr.eventcheckin.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,18 +37,30 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+            Column {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF0078D4), Color(0xFF00A4EF), Color(0xFF7FBA00))
+                            )
+                        )
                 )
-            )
+                TopAppBar(
+                    title = { Text("Settings", fontWeight = FontWeight.SemiBold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -209,10 +226,11 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "</>",
-                            color = MaterialTheme.colorScheme.surface,
-                            fontWeight = FontWeight.SemiBold
+                        Icon(
+                            painter = painterResource(R.drawable.ic_github),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

@@ -25,6 +25,8 @@ Scan attendee QR codes, validate registrations through an HTTPS API, prevent acc
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/access.png" width="220" alt="Staff access screen"> | <img src="docs/screenshots/scanner.png" width="220" alt="QR scanner screen"> | <img src="docs/screenshots/success.png" width="220" alt="Successful check-in screen"> | <img src="docs/screenshots/settings.png" width="220" alt="Station settings screen"> |
 
+<p align="center"><img src="docs/screenshots/settings-dark.png" width="220" alt="Station settings in dark mode"><br><sub>Purpose-built dark mode with layered surfaces and accessible contrast.</sub></p>
+
 The interface follows a **Microsoft Fluent-inspired** visual system adapted for Android: Microsoft Blue `#0078D4`, neutral layered surfaces, compact 6–12 dp radii, subtle elevation, clear one-pixel borders, and system sans-serif typography.
 
 ## Why this project exists
@@ -42,6 +44,7 @@ Event entrances need a fast tool with one job: confirm whether a registration is
 - Encrypted offline queue retried after authorized app start and the next successful online check-in.
 - Input trimming, control-character rejection, and length validation.
 - Staff access gate with local encrypted authorization state.
+- Clear on-device security guidance at the access gate.
 - System, light, and dark appearance preferences.
 - Optional haptic feedback after check-in results.
 - In-app open-source entry point for reviewing, learning from, and contributing to the project.
