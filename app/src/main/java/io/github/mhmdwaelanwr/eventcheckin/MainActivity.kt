@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -115,47 +114,44 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
     val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
     val scope = rememberCoroutineScope()
 
-    Dialog(
-        onDismissRequest = { },
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .padding(horizontal = 32.dp)
     ) {
-        Card(
+        Spacer(Modifier.height(52.dp))
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                .size(64.dp)
+                .background(Color(0xFFDFF2FF), RoundedCornerShape(32.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
                 Icon(
                     Icons.Default.VpnKey,
                     contentDescription = null,
-                    modifier = Modifier
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(10.dp)
-                        .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    modifier = Modifier.size(28.dp),
+                    tint = Color(0xFF0078D7)
                 )
-                
-                Text(
-                    "Staff access",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Text(
-                    "Enter the event access key to open the check-in scanner.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Start,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        }
+
+        Spacer(Modifier.height(36.dp))
+        Text(
+            "Staff access",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Enter the event access key to open the check-in scanner.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.widthIn(max = 326.dp)
+        )
+
+        Spacer(Modifier.height(52.dp))
 
                 OutlinedTextField(
                     value = key,
@@ -163,7 +159,8 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                         key = it
                         isError = false 
                     },
-                    label = { Text("Access Key") },
+                    label = { Text("Access key") },
+                    placeholder = { Text("Enter access key") },
                     singleLine = true,
                     isError = isError,
                     enabled = !isLoading,
@@ -195,10 +192,11 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                             Text("Incorrect access key. Please try again.")
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp),
                     shape = RoundedCornerShape(6.dp)
                 )
 
+                Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = {
                         scope.launch {
@@ -240,7 +238,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                             isLoading = false
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(6.dp),
                     enabled = !isLoading && key.isNotBlank()
                 ) {
@@ -254,8 +252,14 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                         Text("Verify and continue")
                     }
                 }
-            }
-        }
+
+        Spacer(Modifier.weight(1f))
+        Text(
+            "Authorized event staff only",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 40.dp)
+        )
     }
 }
 
@@ -300,12 +304,6 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
     if (isAuthorized) {
         val uiState by viewModel.uiState.collectAsState()
         val settingsState by viewModel.settingsState.collectAsState()
-        val isSystemDark = isSystemInDarkTheme()
-        val isDarkTheme = when (settingsState.darkMode) {
-            DarkModeConfig.SYSTEM -> isSystemDark
-            DarkModeConfig.LIGHT -> false
-            DarkModeConfig.DARK -> true
-        }
         var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
 
         LaunchedEffect(Unit) {
@@ -338,82 +336,36 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
             SettingsScreen(
                 viewModel = viewModel,
                 settingsState = settingsState,
-                onBack = { currentScreen = Screen.SCANNING }
+                onBack = { currentScreen = Screen.SCANNING },
+                onLock = {
+                    SecurityManager.setAuthorized(context, false)
+                    isAuthorized = false
+                }
+            )
+        } else if (uiState is AttendanceState.Success) {
+            SuccessScreen(
+                state = uiState as AttendanceState.Success,
+                onScanNext = viewModel::resetState
             )
         } else {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text("Event Check-in") },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        actions = {
-                            IconButton(onClick = {
-                                val newMode = if (isDarkTheme) {
-                                    DarkModeConfig.LIGHT
-                                } else {
-                                    DarkModeConfig.DARK
-                                }
-                                viewModel.updateDarkMode(newMode)
-                            }) {
-                                Icon(
-                                    imageVector = when (settingsState.darkMode) {
-                                        DarkModeConfig.DARK -> Icons.Filled.DarkMode
-                                        DarkModeConfig.LIGHT -> Icons.Filled.LightMode
-                                        DarkModeConfig.SYSTEM -> if (isSystemDark) {
-                                            Icons.Filled.DarkMode
-                                        } else {
-                                            Icons.Filled.LightMode
-                                        }
-                                    },
-                                    contentDescription = "Toggle Theme"
-                                )
-                            }
-                            IconButton(onClick = { currentScreen = Screen.SETTINGS }) {
-                                Icon(Icons.Default.Settings, contentDescription = "Settings")
-                            }
-                        }
-                    )
-                }
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
+            if (hasCameraPermission) {
+                ScanningScreen(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    hapticEnabled = settingsState.hapticEnabled,
+                    onSettings = { currentScreen = Screen.SETTINGS }
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (hasCameraPermission) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                        ) {
-                            ScanningScreen(
-                                viewModel = viewModel,
-                                uiState = uiState,
-                                hapticEnabled = settingsState.hapticEnabled
-                            )
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Camera permission is required to scan QR codes.")
-                        }
-                    }
+                    Text("Camera permission is required to scan QR codes.")
                 }
             }
 
             when (val state = uiState) {
-                is AttendanceState.Success -> {
-                    ResultDialog(
-                        type = ResultType.SUCCESS,
-                        message = "Success: ${state.message}\nID: ${state.registrationId}",
-                        onDismiss = { viewModel.resetState() }
-                    )
-                }
+                is AttendanceState.Success -> Unit
                 is AttendanceState.AlreadyRegistered -> {
                     ResultDialog(
                         type = ResultType.ALREADY_REGISTERED,
@@ -441,12 +393,74 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
     }
 }
 
+@Composable
+fun SuccessScreen(
+    state: AttendanceState.Success,
+    onScanNext: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .padding(horizontal = 32.dp)
+    ) {
+        Spacer(Modifier.height(56.dp))
+        Box(
+            modifier = Modifier.size(72.dp).background(Color(0xFFDFF6DD), RoundedCornerShape(36.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF107C34), modifier = Modifier.size(36.dp))
+        }
+        Spacer(Modifier.height(36.dp))
+        Text("CHECK-IN COMPLETE", color = Color(0xFF107C34), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Attendance confirmed",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "The attendee is now marked as present.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 14.sp
+        )
+        Spacer(Modifier.height(36.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            Column(Modifier.padding(24.dp)) {
+                Text("Registration ID", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Spacer(Modifier.height(6.dp))
+                Text(state.registrationId, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                HorizontalDivider(Modifier.padding(vertical = 18.dp))
+                Text("Checked in  •  Just now", color = Color(0xFF147A57), fontSize = 13.sp)
+            }
+        }
+        Spacer(Modifier.height(32.dp))
+        Button(
+            onClick = onScanNext,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(6.dp)
+        ) {
+            Text("Scan next attendee", fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
 @SuppressLint("MissingPermission")
 @Composable
 fun ScanningScreen(
     viewModel: AttendanceViewModel,
     uiState: AttendanceState,
-    hapticEnabled: Boolean
+    hapticEnabled: Boolean,
+    onSettings: () -> Unit
 ) {
     var torchEnabled by remember { mutableStateOf(false) }
     var manualId by remember { mutableStateOf("") }
@@ -487,14 +501,37 @@ fun ScanningScreen(
                 .background(Color.Black.copy(alpha = 0.5f))
         )
 
-        ScannerOverlay(modifier = Modifier.align(Alignment.Center))
+        ScannerOverlay(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 216.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(112.dp)
+                .background(Color(0xF5202020))
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        ) {
+            Text("EVENT CHECK-IN", color = Color(0xFF60BAFF), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text("Scan attendee QR", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+        }
+
+        IconButton(
+            onClick = onSettings,
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 12.dp)
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+        }
 
         FloatingActionButton(
             onClick = { torchEnabled = !torchEnabled },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(24.dp)
-                .size(50.dp),
+                .padding(top = 176.dp, end = 24.dp)
+                .size(44.dp),
             containerColor = if (torchEnabled) Color(0xFFFFD700) else Color.White,
             contentColor = if (torchEnabled) Color.Black else Color.Gray,
             shape = RoundedCornerShape(12.dp)
@@ -506,7 +543,7 @@ fun ScanningScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 40.dp)
+                .padding(top = 136.dp)
                 .background(
                     color = when (uiState) {
                         is AttendanceState.Idle -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
@@ -530,11 +567,18 @@ fun ScanningScreen(
                     is AttendanceState.PendingSync -> "Saved for sync"
                     is AttendanceState.Error -> "Error"
                 },
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
         }
+
+        Text(
+            "Hold the code inside the frame",
+            color = Color.White,
+            fontSize = 14.sp,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 506.dp)
+        )
 
         Card(
             modifier = Modifier
@@ -552,9 +596,10 @@ fun ScanningScreen(
             ) {
                 Text(
                     text = "Manual check-in",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -609,13 +654,13 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
 
     Box(
         modifier = modifier
-            .size(250.dp)
+            .size(264.dp)
             .background(Color.Transparent)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = 4.dp.toPx()
             val cornerLength = 30.dp.toPx()
-            val color = Color(0xFF00BCF2)
+            val color = Color(0xFF60BAFF)
 
             drawPath(
                 path = Path().apply {
