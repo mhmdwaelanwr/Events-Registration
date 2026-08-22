@@ -74,7 +74,7 @@ object SecurityManager {
             registrationId = registrationId
         ) ?: return false
         return getEncryptedPrefs(context).edit()
-            .putStringSet(PENDING_CHECK_INS_KEY, pending)
+            .putStringSet(PENDING_CHECK_INS_KEY, pending.toMutableSet())
             .commit()
     }
 
