@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import anwar.mlsa.eventsregistration.Hedera
+import anwar.mlsa.eventsregistration.SecurityManager
 import anwar.mlsa.eventsregistration.data.MarkAttendanceRequest
 import anwar.mlsa.eventsregistration.data.SettingsPreferences
 import anwar.mlsa.eventsregistration.network.RetrofitClient
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 enum class DarkModeConfig {
     SYSTEM, LIGHT, DARK
@@ -30,6 +32,7 @@ sealed class AttendanceState {
     object Loading : AttendanceState()
     data class Success(val message: String, val registrationId: String) : AttendanceState()
     data class AlreadyRegistered(val message: String, val registrationId: String) : AttendanceState()
+    data class PendingSync(val registrationId: String, val pendingCount: Int) : AttendanceState()
     data class Error(val message: String) : AttendanceState()
 }
 
@@ -103,6 +106,7 @@ class AttendanceViewModel(
                                 message = successMessage,
                                 registrationId = normalizedId
                             )
+                            retryPendingCheckIns(excludeRegistrationId = normalizedId)
                         } else {
                             if (body.message?.contains("already registered", ignoreCase = true) == true ||
                                 body.message?.contains("duplicate", ignoreCase = true) == true ||
@@ -128,8 +132,45 @@ class AttendanceViewModel(
                         _uiState.value = AttendanceState.Error("The check-in service rejected the request (${response.code()}).")
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: IOException) {
+                val queued = SecurityManager.enqueuePendingCheckIn(
+                    getApplication<Application>().applicationContext,
+                    normalizedId
+                )
+                _uiState.value = if (queued) {
+                    AttendanceState.PendingSync(
+                        registrationId = normalizedId,
+                        pendingCount = SecurityManager.getPendingCheckIns(
+                            getApplication<Application>().applicationContext
+                        ).size
+                    )
+                } else {
+                    AttendanceState.Error("Offline queue is full. Connect to the internet and try again.")
+                }
+            } catch (_: Exception) {
                 _uiState.value = AttendanceState.Error("Couldn't reach the check-in service. Check your connection and try again.")
+            }
+        }
+    }
+
+    fun retryPendingCheckIns(excludeRegistrationId: String? = null) {
+        viewModelScope.launch {
+            val context = getApplication<Application>().applicationContext
+            val pending = SecurityManager.getPendingCheckIns(context)
+                .filterNot { it == excludeRegistrationId }
+            if (pending.isEmpty()) return@launch
+
+            try {
+                val service = RetrofitClient.getInstance(context)
+                for (registrationId in pending) {
+                    val response = service.markAttendance(MarkAttendanceRequest(registrationId))
+                    val accepted = response.isSuccessful && response.body()?.success == true
+                    if (accepted || response.code() == 409) {
+                        SecurityManager.removePendingCheckIn(context, registrationId)
+                    }
+                }
+            } catch (_: Exception) {
+                // Keep the encrypted queue intact and retry after the next online check-in/app start.
             }
         }
     }
