@@ -87,21 +87,22 @@ class AttendanceViewModel(
                     val body = response.body()
                     if (body != null) {
                         if (body.success) {
-                            try {
-                                if (Hedera.isConfigured(context)) {
+                            var successMessage = body.message ?: "Attendance marked successfully"
+                            if (Hedera.isConfigured(context)) {
+                                try {
                                     withContext(Dispatchers.IO) {
                                         Hedera.submitRegistrationId(context, normalizedId)
                                     }
+                                } catch (_: Exception) {
+                                    // The attendance API is the source of truth. An optional audit
+                                    // failure must not invite the operator to check the attendee in twice.
+                                    successMessage += ". Audit trail unavailable"
                                 }
-                                _uiState.value = AttendanceState.Success(
-                                    message = body.message ?: "Attendance marked successfully",
-                                    registrationId = normalizedId
-                                )
-                            } catch (e: Exception) {
-                                _uiState.value = AttendanceState.Error(
-                                    "Hedera submit failed: ${e.localizedMessage}"
-                                )
                             }
+                            _uiState.value = AttendanceState.Success(
+                                message = successMessage,
+                                registrationId = normalizedId
+                            )
                         } else {
                             if (body.message?.contains("already registered", ignoreCase = true) == true ||
                                 body.message?.contains("duplicate", ignoreCase = true) == true ||
