@@ -1,0 +1,14 @@
+# Copy this file to local.properties and set your local Android SDK path.
+sdk.dir=/path/to/Android/sdk
+
+# Required for live attendance validation. Must use HTTPS and end with /.
+BASE_URL=https://api.example.com/
+
+# Temporary station access configuration. Keep production secrets server-side.
+APP_ACCESS_KEY=replace-with-development-key
+REMOTE_CONFIG_URL=https://example.com/event-access-key.txt
+
+# Optional Hedera testnet audit trail. Leave all three blank to disable it.
+HEDERA_ACCOUNT_ID=
+HEDERA_PRIVATE_KEY=
+HEDERA_TOPIC_ID=

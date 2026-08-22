@@ -16,11 +16,11 @@ plugins {
 }
 
 android {
-    namespace = "anwar.mlsa.eventsregistration"
+    namespace = "io.github.mhmdwaelanwr.eventcheckin"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "anwar.mlsa.eventsregistration"
+        applicationId = "io.github.mhmdwaelanwr.eventcheckin"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

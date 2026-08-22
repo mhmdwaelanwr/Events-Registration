@@ -99,7 +99,13 @@ The attendance API remains the source of truth. Hedera submission is optional an
 
 ## Configuration
 
-Create a local `local.properties` file in the repository root:
+Copy the provided template, then update it with local development values:
+
+```bash
+cp local.properties.example local.properties
+```
+
+The resulting local file uses this format:
 
 ```properties
 sdk.dir=/path/to/Android/sdk
@@ -173,7 +179,7 @@ Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 ## Project layout
 
 ```text
-app/src/main/java/<application-package>/
+app/src/main/java/io/github/mhmdwaelanwr/eventcheckin/
 ├── MainActivity.kt                 # Compose app, scanner, access, and result UI
 ├── SecurityManager.kt              # Encrypted authorization and configuration
 ├── Hedera.kt                       # Optional HCS adapter

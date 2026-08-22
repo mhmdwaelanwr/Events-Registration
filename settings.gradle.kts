@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MLSA Egypt Events Registration"
+rootProject.name = "Event Check-in"
 include(":app")

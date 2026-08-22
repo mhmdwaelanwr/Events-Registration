@@ -22,11 +22,11 @@
 }
 
 # احتفظ بجميع موديلات البيانات (Data Models)
--keep class anwar.mlsa.eventsregistration.data.** { *; }
+-keep class io.github.mhmdwaelanwr.eventcheckin.data.** { *; }
 
 # احتفظ بجميع كلاسات الشبكة (Network interfaces)
--keep interface anwar.mlsa.eventsregistration.network.** { *; }
--keep class anwar.mlsa.eventsregistration.network.** { *; }
+-keep interface io.github.mhmdwaelanwr.eventcheckin.network.** { *; }
+-keep class io.github.mhmdwaelanwr.eventcheckin.network.** { *; }
 
 # Callbacks and Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
