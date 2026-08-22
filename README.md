@@ -125,7 +125,7 @@ Content-Type: application/json
 
 ```json
 {
-  "registrationId": "MLSA-2026-01842"
+  "registrationId": "EVENT-2026-01842"
 }
 ```
 
@@ -171,7 +171,7 @@ Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 ## Project layout
 
 ```text
-app/src/main/java/anwar/mlsa/eventsregistration/
+app/src/main/java/<application-package>/
 ├── MainActivity.kt                 # Compose app, scanner, access, and result UI
 ├── SecurityManager.kt              # Encrypted authorization and configuration
 ├── Hedera.kt                       # Optional HCS adapter
