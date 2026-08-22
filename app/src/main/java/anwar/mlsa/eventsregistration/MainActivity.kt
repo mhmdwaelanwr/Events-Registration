@@ -307,6 +307,10 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
         }
         var currentScreen by remember { mutableStateOf(Screen.SCANNING) }
 
+        LaunchedEffect(Unit) {
+            viewModel.retryPendingCheckIns()
+        }
+
         var hasCameraPermission by remember {
             mutableStateOf(
                 ContextCompat.checkSelfPermission(
@@ -416,6 +420,13 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                         onDismiss = { viewModel.resetState() }
                     )
                 }
+                is AttendanceState.PendingSync -> {
+                    ResultDialog(
+                        type = ResultType.PENDING_SYNC,
+                        message = "Saved securely for automatic sync.\nID: ${state.registrationId}\nPending: ${state.pendingCount}",
+                        onDismiss = { viewModel.resetState() }
+                    )
+                }
                 is AttendanceState.Error -> {
                     ResultDialog(
                         type = ResultType.ERROR,
@@ -501,6 +512,7 @@ fun ScanningScreen(
                         is AttendanceState.Loading -> Color(0xFFFFD700).copy(alpha = 0.9f)
                         is AttendanceState.Success -> Color(0xFF4CAF50).copy(alpha = 0.9f)
                         is AttendanceState.AlreadyRegistered -> Color(0xFF2196F3).copy(alpha = 0.9f)
+                        is AttendanceState.PendingSync -> Color(0xFFFFB900).copy(alpha = 0.95f)
                         is AttendanceState.Error -> Color(0xFFF44336).copy(alpha = 0.9f)
                     },
                     shape = RoundedCornerShape(6.dp)
@@ -514,6 +526,7 @@ fun ScanningScreen(
                     is AttendanceState.Loading -> "Verifying..."
                     is AttendanceState.Success -> "Verified!"
                     is AttendanceState.AlreadyRegistered -> "Registered Before"
+                    is AttendanceState.PendingSync -> "Saved for sync"
                     is AttendanceState.Error -> "Error"
                 },
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -657,7 +670,7 @@ fun ScannerOverlay(modifier: Modifier = Modifier) {
 }
 
 enum class ResultType {
-    SUCCESS, ERROR, ALREADY_REGISTERED
+    SUCCESS, ERROR, ALREADY_REGISTERED, PENDING_SYNC
 }
 
 @Composable
@@ -679,24 +692,28 @@ fun ResultDialog(
         ResultType.SUCCESS -> Color(0xFFE8F5E9)
         ResultType.ERROR -> Color(0xFFFFEBEE)
         ResultType.ALREADY_REGISTERED -> Color(0xFFE3F2FD)
+        ResultType.PENDING_SYNC -> Color(0xFFFFF4CE)
     }
 
     val iconColor = when(type) {
         ResultType.SUCCESS -> Color(0xFF2E7D32)
         ResultType.ERROR -> Color(0xFFC62828)
         ResultType.ALREADY_REGISTERED -> Color(0xFF1565C0)
+        ResultType.PENDING_SYNC -> Color(0xFF8A5700)
     }
 
     val icon = when(type) {
         ResultType.SUCCESS -> Icons.Default.CheckCircle
         ResultType.ERROR -> Icons.Default.Warning
         ResultType.ALREADY_REGISTERED -> Icons.Default.Info
+        ResultType.PENDING_SYNC -> Icons.Default.Info
     }
 
     val title = when(type) {
         ResultType.SUCCESS -> "Attendance confirmed"
         ResultType.ERROR -> "Check-in failed"
         ResultType.ALREADY_REGISTERED -> "Already checked in"
+        ResultType.PENDING_SYNC -> "Saved for sync"
     }
 
     Dialog(onDismissRequest = onDismiss) {
