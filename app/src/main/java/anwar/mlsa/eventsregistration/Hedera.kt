@@ -9,6 +9,12 @@ import com.hedera.hashgraph.sdk.TopicId
 import com.hedera.hashgraph.sdk.TopicMessageSubmitTransaction
 
 object Hedera {
+
+    fun isConfigured(context: Context): Boolean = listOf(
+        "HEDERA_ACCOUNT_ID",
+        "HEDERA_PRIVATE_KEY",
+        "HEDERA_TOPIC_ID"
+    ).all { SecurityManager.getConfig(context, it).isNotBlank() }
     
     fun submitRegistrationId(context: Context, registrationId: String) {
         var client: Client? = null

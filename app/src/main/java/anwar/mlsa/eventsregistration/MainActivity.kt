@@ -138,13 +138,13 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                 )
                 
                 Text(
-                    "Security Verification",
+                    "Staff access",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
-                    "Please enter your access key to continue. This app uses dynamic remote authorization.",
+                    "Enter the event access key to open the check-in scanner.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -211,6 +211,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                             } else {
                                 // 2. If not master, check Remote Config via Pastebin
                                 try {
+                                    require(remoteUrl.startsWith("https://"))
                                     val remoteKey = withContext(Dispatchers.IO) {
                                         URL(remoteUrl).readText().trim()
                                     }
@@ -243,7 +244,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Verify & Enter")
+                        Text("Verify and continue")
                     }
                 }
             }
@@ -332,10 +333,10 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("MLSA Egypt Attendance") },
+                        title = { Text("Event Check-in") },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         actions = {
                             IconButton(onClick = {
@@ -502,7 +503,7 @@ fun ScanningScreen(
             @Suppress("UNUSED_VARIABLE")
             Text(
                 text = when (uiState) {
-                    is AttendanceState.Idle -> "Scan QR Code"
+                    is AttendanceState.Idle -> "Ready to scan"
                     is AttendanceState.Loading -> "Verifying..."
                     is AttendanceState.Success -> "Verified!"
                     is AttendanceState.AlreadyRegistered -> "Registered Before"
@@ -528,7 +529,7 @@ fun ScanningScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Or enter ID manually",
+                    text = "Manual check-in",
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -685,9 +686,9 @@ fun ResultDialog(
     }
 
     val title = when(type) {
-        ResultType.SUCCESS -> "Success!"
-        ResultType.ERROR -> "Failed!"
-        ResultType.ALREADY_REGISTERED -> "Attention"
+        ResultType.SUCCESS -> "Attendance confirmed"
+        ResultType.ERROR -> "Check-in failed"
+        ResultType.ALREADY_REGISTERED -> "Already checked in"
     }
 
     Dialog(onDismissRequest = onDismiss) {

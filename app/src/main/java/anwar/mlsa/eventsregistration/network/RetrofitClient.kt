@@ -5,37 +5,17 @@ import anwar.mlsa.eventsregistration.SecurityManager
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private var instance: AttendanceService? = null
 
-    private fun getUnsafeOkHttpClient(): OkHttpClient {
-        return try {
-            val trustAllCerts = arrayOf<TrustManager>(
-                object : X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
-                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-                }
-            )
-
-            val sslContext = SSLContext.getInstance("SSL")
-            sslContext.init(null, trustAllCerts, SecureRandom())
-            val sslSocketFactory = sslContext.socketFactory
-
-            OkHttpClient.Builder()
-                .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
-                .hostnameVerifier { _, _ -> true }
-                .build()
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-    }
+    private fun secureOkHttpClient() = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
 
     fun getInstance(context: Context): AttendanceService {
         return instance ?: synchronized(this) {
@@ -45,9 +25,10 @@ object RetrofitClient {
 
     private fun buildRetrofit(context: Context): AttendanceService {
         val baseUrl = SecurityManager.getConfig(context, "BASE_URL")
+        require(baseUrl.startsWith("https://")) { "BASE_URL must use HTTPS" }
         return Retrofit.Builder()
             .baseUrl(if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/")
-            .client(getUnsafeOkHttpClient())
+            .client(secureOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AttendanceService::class.java)

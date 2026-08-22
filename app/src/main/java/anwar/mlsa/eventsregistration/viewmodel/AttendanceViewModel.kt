@@ -48,6 +48,7 @@ class AttendanceViewModel(
 
     companion object {
         private const val SCAN_DELAY = 3000L
+        private const val MAX_REGISTRATION_ID_LENGTH = 160
     }
 
     fun updateDarkMode(config: DarkModeConfig) {
@@ -61,32 +62,40 @@ class AttendanceViewModel(
     }
 
     fun markAttendance(registrationId: String) {
+        val normalizedId = registrationId.trim()
+        if (normalizedId.isBlank() || normalizedId.length > MAX_REGISTRATION_ID_LENGTH ||
+            normalizedId.any { it.isISOControl() }) {
+            _uiState.value = AttendanceState.Error("Invalid registration code")
+            return
+        }
         if (_uiState.value is AttendanceState.Loading) return
 
         val currentTime = System.currentTimeMillis()
-        if (registrationId == lastScannedCode && (currentTime - lastScanTime) < SCAN_DELAY) {
+        if (normalizedId == lastScannedCode && (currentTime - lastScanTime) < SCAN_DELAY) {
             return
         }
 
-        lastScannedCode = registrationId
+        lastScannedCode = normalizedId
         lastScanTime = currentTime
 
         viewModelScope.launch {
             _uiState.value = AttendanceState.Loading
             try {
                 val context = getApplication<Application>().applicationContext
-                val response = RetrofitClient.getInstance(context).markAttendance(MarkAttendanceRequest(registrationId))
+                val response = RetrofitClient.getInstance(context).markAttendance(MarkAttendanceRequest(normalizedId))
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null) {
                         if (body.success) {
                             try {
-                                withContext(Dispatchers.IO) {
-                                    Hedera.submitRegistrationId(context, registrationId)
+                                if (Hedera.isConfigured(context)) {
+                                    withContext(Dispatchers.IO) {
+                                        Hedera.submitRegistrationId(context, normalizedId)
+                                    }
                                 }
                                 _uiState.value = AttendanceState.Success(
                                     message = body.message ?: "Attendance marked successfully",
-                                    registrationId = registrationId
+                                    registrationId = normalizedId
                                 )
                             } catch (e: Exception) {
                                 _uiState.value = AttendanceState.Error(
@@ -99,7 +108,7 @@ class AttendanceViewModel(
                                 body.message?.contains("مسجل مسبقا", ignoreCase = true) == true) {
                                 _uiState.value = AttendanceState.AlreadyRegistered(
                                     message = body.message ?: "User already registered",
-                                    registrationId = registrationId
+                                    registrationId = normalizedId
                                 )
                             } else {
                                 _uiState.value = AttendanceState.Error(body.message ?: "Failed to mark attendance")
@@ -112,14 +121,14 @@ class AttendanceViewModel(
                     if (response.code() == 409) {
                          _uiState.value = AttendanceState.AlreadyRegistered(
                             message = "User already registered",
-                            registrationId = registrationId
+                            registrationId = normalizedId
                         )
                     } else {
-                        _uiState.value = AttendanceState.Error("Error: ${response.code()} ${response.message()}")
+                        _uiState.value = AttendanceState.Error("The check-in service rejected the request (${response.code()}).")
                     }
                 }
             } catch (e: Exception) {
-                _uiState.value = AttendanceState.Error("Connection error: ${e.localizedMessage}")
+                _uiState.value = AttendanceState.Error("Couldn't reach the check-in service. Check your connection and try again.")
             }
         }
     }

@@ -1,156 +1,84 @@
-<div align="center">
+# Event Check-in for Android
 
-  <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/light%20mode-05YmNthXDCSewvqNuDpfMqtQ2FNxfi.png" alt="MLSA Egypt Events Registration Logo" width="140" />
+A focused Android app for event staff to verify attendees at the door. It scans QR codes with CameraX and ML Kit, sends the registration ID to a configurable HTTPS attendance API, detects duplicate check-ins, and can optionally record successful IDs through Hedera Consensus Service.
 
-  <h1>MLSA Egypt Events Registration</h1>
+> This is an **organizer/staff check-in tool**. It is not an attendee event browser, ticket marketplace, account system, or registration portal.
 
-  <p>
-    A secure Android event registration app for browsing events, registering tickets,
-    managing digital passes, and verifying attendance using QR codes and Hedera blockchain tracking.
-  </p>
+## Screenshots
 
-  <p>
-    <img src="https://img.shields.io/github/v/release/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=release" alt="Release" />
-    <img src="https://img.shields.io/github/downloads/mhmdwaelanwr/Events-Registration/total?style=for-the-badge&label=downloads" alt="Downloads" />
-    <img src="https://img.shields.io/github/repo-size/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=repo%20size" alt="Repo Size" />
-    <img src="https://img.shields.io/github/stars/mhmdwaelanwr/Events-Registration?style=for-the-badge&label=stars" alt="Stars" />
-  </p>
+| Staff access | QR scanner | Confirmed | Settings |
+|:--:|:--:|:--:|:--:|
+| ![Staff access](docs/screenshots/access.png) | ![QR scanner](docs/screenshots/scanner.png) | ![Successful check-in](docs/screenshots/success.png) | ![Settings](docs/screenshots/settings.png) |
 
-  <p>
-    <img src="https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin Android" />
-    <img src="https://img.shields.io/badge/Architecture-MVVM-02569B?style=for-the-badge" alt="MVVM" />
-    <img src="https://img.shields.io/badge/Blockchain-Hedera-000000?style=for-the-badge" alt="Hedera" />
-    <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
-  </p>
+The editable UI source is available in the [Figma design](https://www.figma.com/design/TjdQ3DeAUm0qbXhBLY1dDS/Events-Registration-%E2%80%94-Mobile-UI-UX?node-id=0-1).
 
-</div>
+## What it does
 
-## 📥 Download
+- Scans attendee QR codes on-device with ML Kit.
+- Supports manual registration-ID entry when a code cannot be scanned.
+- Marks attendance through `POST /attendance/mark`.
+- Shows distinct success, duplicate, connection, and validation states.
+- Debounces repeated scans of the same code.
+- Supports light, dark, and system themes plus optional haptic feedback.
+- Restricts entry to staff using a configured access key.
+- Optionally submits successful registration IDs to a Hedera testnet topic.
 
-Download the latest official APK from **GitHub Releases**:
+## Tech stack
 
-<div align="center">
+- Kotlin and Jetpack Compose
+- MVVM with `StateFlow`
+- CameraX and Google ML Kit barcode scanning
+- Retrofit, OkHttp, Gson, and Kotlin coroutines
+- AndroidX Security encrypted preferences
+- Optional Hedera Java SDK integration
 
-  <a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-arm64-v8a-release.apk">
-    <img src="https://img.shields.io/badge/Download-64--bit_APK-2EA44F?style=for-the-badge&logo=android&logoColor=white" alt="Download 64-bit APK" />
-  </a>
+## Security notes
 
-  <a href="https://github.com/mhmdwaelanwr/Events-Registration/releases/latest/download/app-armeabi-v7a-release.apk">
-    <img src="https://img.shields.io/badge/Download-32--bit_APK-F97316?style=for-the-badge&logo=android&logoColor=white" alt="Download 32-bit APK" />
-  </a>
+The app uses Android's standard certificate and hostname validation, rejects non-HTTPS API base URLs, disables cleartext traffic and Android backups, validates scanned IDs, and does not sign release builds with the debug key.
 
-</div>
+Secrets embedded in an APK can always be extracted. For production, keep Hedera operator keys and staff authorization on a trusted backend; the Android client should receive short-lived tokens and call server-side operations. Do not commit `local.properties`.
 
-<br>
+## Configuration
 
-| APK | Recommended for |
-|---|---|
-| `app-arm64-v8a-release.apk` | Most modern Android devices |
-| `app-armeabi-v7a-release.apk` | Older 32-bit Android devices |
+Create `local.properties` in the project root:
 
-> For most users, the **64-bit APK** is recommended.
+```properties
+sdk.dir=/path/to/Android/sdk
+BASE_URL=https://api.example.com/
+APP_ACCESS_KEY=development-only-key
+REMOTE_CONFIG_URL=https://example.com/event-access-key.txt
 
-## 📱 Features
+# Optional Hedera testnet integration
+HEDERA_ACCOUNT_ID=
+HEDERA_PRIVATE_KEY=
+HEDERA_TOPIC_ID=
+```
 
-*   **Event Browsing:** View a list of upcoming events with detailed descriptions, dates, and locations.
-*   **User Registration:** Secure sign-up and login functionality for attendees.
-*   **Easy Registration:** One-tap registration for events.
-*   **My Tickets:** View registered events and access digital tickets.
-*   **Profile Management:** Update user details and preferences.
+The attendance endpoint accepts `{ "registrationId": "MLSA-2026-01842" }` and returns `{ "success": true, "message": "Attendance marked successfully" }`. Use HTTP `409` or a duplicate/already-registered message for an attendee who has already checked in.
 
-## 🛠️ Tech Stack
+## Build and test
 
-*   **Language:** Kotlin / Java
-*   **Architecture:** MVVM (Model-View-ViewModel)
-*   **UI:** Jetpack Compose / XML Layouts
-*   **Networking:** Retrofit / OkHttp
-*   **Database:** Room Database / SQLite
-*   **Asynchronous Programming:** Coroutines / RxJava
-*   **Blockchain Integration:** Hedera
+Requirements: Android Studio with JDK 17+, Android SDK 36, and a device/emulator running Android 7.0 (API 24) or newer.
 
-## 🔗 Hedera Integration
+```bash
+./gradlew test
+./gradlew lint
+./gradlew assembleDebug
+```
 
-See [HEDERA](docs/HEDERA.md) for the Hedera Consensus Service workflow, configuration, and troubleshooting notes.
+For a production release, configure your own release signing key; the repository intentionally does not fall back to the debug certificate.
 
-## ⚠️ Blockchain Usage Notice
+## Project structure
 
-This project uses blockchain technology only for **educational and technical demonstration purposes**, specifically for event attendance verification and tamper-resistant tracking.
+- `MainActivity.kt` — Compose navigation, access gate, scanner, and result UI
+- `AttendanceViewModel.kt` — state, validation, debouncing, and check-in orchestration
+- `network/` — HTTPS API client and attendance endpoint
+- `Hedera.kt` — optional Consensus Service submission
+- `data/SettingsPreferences.kt` — appearance and haptic preferences
+- `docs/screenshots/` — UI screenshots exported from the Figma source
 
-This project does **not** provide cryptocurrency trading, investment services, token issuance, wallets, exchanges, financial speculation, or any crypto-asset promotion.
+## Contributing and security
 
-## 🚀 Getting Started
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
-### Prerequisites
-
-*   Android Studio Arctic Fox or newer
-*   JDK 11 or newer
-*   Android SDK API Level 24+
-
-### Installation
-
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/mhmdwaelanwr/Events-Registration.git
-    ```
-2.  Open the project in **Android Studio**.
-3.  Sync the project with Gradle files.
-4.  Create a virtual device or connect a physical device.
-5.  Click **Run** (Shift+F10) to build and install the app.
-
-## 📸 Screenshots
-
-|                    Home Screen                     |           Settings Screen            | Registration |
-|:--------------------------------------------------:|:------------------------------------:|:------------:|
-| ![Home](app/src/main/res/drawable/screenshot1.png) | ![Settings](app/src/main/res/drawable/screenshot2.png) | ![Register](app/src/main/res/drawable/screenshot3.png) |
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1.  Fork the project.
-2.  Create your feature branch 
-    ```bash
-    git checkout -b feature/AmazingFeature
-    ```
-3.  Commit your changes 
-    ```bash
-    git commit -m 'Add some AmazingFeature'
-    ```
-4.  Push to the branch 
-    ```bash
-    git push origin feature/AmazingFeature
-    ```
-5.  Open a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔐 Security
-
-If you discover a security vulnerability, please report it privately. See [SECURITY.md](SECURITY.md) for details.
-
-## 📫 Connect With Me
-
-<div align="center">
-
-  <a href="https://github.com/mhmdwaelanwr">
-    <img src="https://img.shields.io/badge/GitHub-mhmdwaelanwr-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
-  </a>
-
-  <a href="https://www.linkedin.com/in/mhmdwaelanwr">
-    <img src="https://img.shields.io/badge/LinkedIn-mhmdwaelanwr-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
-  </a>
-
-  <a href="mailto:mhmdwaelanwr@gmail.com">
-    <img src="https://img.shields.io/badge/Email-Contact_Me-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
-  </a>
-
-</div>
-
-
----
-
-<div align="center">
-  Developed with ❤️ by <a href="https://github.com/mhmdwaelanwr">Mohamed Anwar</a>
-</div>
+Licensed under the [MIT License](LICENSE).
