@@ -9,6 +9,8 @@ object SecurityManager {
     private const val IS_AUTHORIZED_KEY = "is_authorized"
     private const val IS_MASTER_KEY_USED = "is_master_key_used"
     private const val LAST_AUTHORIZED_KEY = "last_authorized_key"
+    private const val PENDING_CHECK_INS_KEY = "pending_check_ins"
+    private const val MAX_PENDING_CHECK_INS = 100
 
     private fun getEncryptedPrefs(context: Context) = EncryptedSharedPreferences.create(
         context,
@@ -58,6 +60,30 @@ object SecurityManager {
             putBoolean(IS_MASTER_KEY_USED, isMaster)
             putString(LAST_AUTHORIZED_KEY, key)
             apply()
+        }
+    }
+
+    fun getPendingCheckIns(context: Context): List<String> =
+        getEncryptedPrefs(context).getStringSet(PENDING_CHECK_INS_KEY, emptySet())
+            .orEmpty()
+            .sorted()
+
+    fun enqueuePendingCheckIn(context: Context, registrationId: String): Boolean {
+        val pending = getPendingCheckIns(context).toMutableSet()
+        if (registrationId in pending) return true
+        if (pending.size >= MAX_PENDING_CHECK_INS) return false
+        pending += registrationId
+        return getEncryptedPrefs(context).edit()
+            .putStringSet(PENDING_CHECK_INS_KEY, pending)
+            .commit()
+    }
+
+    fun removePendingCheckIn(context: Context, registrationId: String) {
+        val pending = getPendingCheckIns(context).toMutableSet()
+        if (pending.remove(registrationId)) {
+            getEncryptedPrefs(context).edit()
+                .putStringSet(PENDING_CHECK_INS_KEY, pending)
+                .apply()
         }
     }
 }
