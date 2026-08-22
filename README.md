@@ -1,6 +1,6 @@
 <div align="center">
 
-# Event Check-in
+# Events Registration
 
 **A secure, focused Android check-in station for event staff.**
 
