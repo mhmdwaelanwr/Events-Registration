@@ -2,9 +2,14 @@ package anwar.mlsa.eventsregistration.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BrandBlue = Color(0xFF1174DE)
-val BrandBlueDark = Color(0xFF82C8FF)
-val SuccessGreen = Color(0xFF149161)
-val Ink = Color(0xFF0E1A2E)
-val AppBackground = Color(0xFFF7F9FC)
-val DarkBackground = Color(0xFF08121F)
+val FluentBlue = Color(0xFF0078D4)
+val FluentBlueDark = Color(0xFF60CDFF)
+val FluentGreen = Color(0xFF107C10)
+val FluentRed = Color(0xFFD13438)
+val FluentInk = Color(0xFF242424)
+val FluentSecondary = Color(0xFF616161)
+val FluentBackground = Color(0xFFF3F3F3)
+val FluentSurface = Color(0xFFFFFFFF)
+val FluentStroke = Color(0xFFE0E0E0)
+val FluentDarkBackground = Color(0xFF202020)
+val FluentDarkSurface = Color(0xFF2B2B2B)

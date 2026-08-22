@@ -2,6 +2,8 @@
 
 A focused Android app for event staff to verify attendees at the door. It scans QR codes with CameraX and ML Kit, sends the registration ID to a configurable HTTPS attendance API, detects duplicate check-ins, and can optionally record successful IDs through Hedera Consensus Service.
 
+The interface uses a Microsoft Fluent-inspired visual language adapted for Android: restrained radii, neutral layered surfaces, accessible borders, system sans-serif typography, and the Microsoft blue accent.
+
 > This is an **organizer/staff check-in tool**. It is not an attendee event browser, ticket marketplace, account system, or registration portal.
 
 ## Screenshots

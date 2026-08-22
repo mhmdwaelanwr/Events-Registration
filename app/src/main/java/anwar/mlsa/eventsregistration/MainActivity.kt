@@ -122,19 +122,25 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(
                     Icons.Default.VpnKey,
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.primary,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(10.dp)
+                        .size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
                 
                 Text(
@@ -146,7 +152,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                 Text(
                     "Enter the event access key to open the check-in scanner.",
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -189,7 +195,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(6.dp)
                 )
 
                 Button(
@@ -234,7 +240,7 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(6.dp),
                     enabled = !isLoading && key.isNotBlank()
                 ) {
                     if (isLoading) {
@@ -478,7 +484,8 @@ fun ScanningScreen(
                 .padding(24.dp)
                 .size(50.dp),
             containerColor = if (torchEnabled) Color(0xFFFFD700) else Color.White,
-            contentColor = if (torchEnabled) Color.Black else Color.Gray
+            contentColor = if (torchEnabled) Color.Black else Color.Gray,
+            shape = RoundedCornerShape(12.dp)
         ) {
             val icon = if (torchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff
             Icon(imageVector = icon, contentDescription = "Toggle Flash")
@@ -496,7 +503,7 @@ fun ScanningScreen(
                         is AttendanceState.AlreadyRegistered -> Color(0xFF2196F3).copy(alpha = 0.9f)
                         is AttendanceState.Error -> Color(0xFFF44336).copy(alpha = 0.9f)
                     },
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(6.dp)
                 )
                 .padding(horizontal = 24.dp, vertical = 10.dp)
         ) {
@@ -522,7 +529,8 @@ fun ScanningScreen(
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -544,7 +552,7 @@ fun ScanningScreen(
                         placeholder = { Text("Registration ID") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(6.dp)
                     )
                     Button(
                         onClick = {
@@ -554,7 +562,7 @@ fun ScanningScreen(
                             }
                         },
                         enabled = uiState is AttendanceState.Idle,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.height(56.dp)
                     ) {
                         Icon(Icons.Default.CheckCircle, contentDescription = null)
@@ -694,7 +702,8 @@ fun ResultDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             colors = CardDefaults.cardColors(containerColor = backgroundColor),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Column(
                 modifier = Modifier
