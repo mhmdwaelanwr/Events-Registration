@@ -1,8 +1,5 @@
 package io.github.mhmdwaelanwr.eventcheckin.ui
 
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,9 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.AttendanceViewModel
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.DarkModeConfig
@@ -27,14 +22,13 @@ import io.github.mhmdwaelanwr.eventcheckin.viewmodel.SettingsState
 fun SettingsScreen(
     viewModel: AttendanceViewModel,
     settingsState: SettingsState,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLock: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Station settings") },
+                title = { Text("Settings", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -56,8 +50,16 @@ fun SettingsScreen(
         ) {
             // Appearance Section
             Text(
-                text = "Appearance",
-                style = MaterialTheme.typography.titleMedium,
+                text = "Customize your check-in station",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 28.dp)
+            )
+
+            Text(
+                text = "APPEARANCE",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -70,11 +72,16 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Dark Mode",
+                        text = "Theme",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Choose how the app looks",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -103,8 +110,9 @@ fun SettingsScreen(
 
             // Features Section
             Text(
-                text = "Features",
-                style = MaterialTheme.typography.titleMedium,
+                text = "FEEDBACK",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -124,7 +132,7 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Haptic Feedback",
+                            text = "Haptic feedback",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -141,7 +149,28 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "SECURITY",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            OutlinedButton(
+                onClick = onLock,
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(6.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Lock this station", modifier = Modifier.fillMaxWidth(), fontWeight = FontWeight.SemiBold)
+            }
+
+            Spacer(modifier = Modifier.height(72.dp))
 
             // About Section
             Box(
@@ -151,15 +180,9 @@ fun SettingsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Development by Mohamed Anwar",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textDecoration = TextDecoration.Underline
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://linkedin.com/in/mhmdwaelanwr"))
-                        context.startActivity(intent)
-                    }
+                    text = "Event Check-in  •  Version 1.0",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
