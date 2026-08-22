@@ -44,6 +44,7 @@ Event entrances need a fast tool with one job: confirm whether a registration is
 - Staff access gate with local encrypted authorization state.
 - System, light, and dark appearance preferences.
 - Optional haptic feedback after check-in results.
+- In-app open-source entry point for reviewing, learning from, and contributing to the project.
 - Optional Hedera testnet topic submission after a successful API response.
 - Fluent-inspired Figma source and matching repository screenshots.
 

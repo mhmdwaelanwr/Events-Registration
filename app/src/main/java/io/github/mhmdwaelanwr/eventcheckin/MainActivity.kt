@@ -125,14 +125,14 @@ fun AccessKeyDialog(onAuthorized: (isMaster: Boolean, keyUsed: String) -> Unit) 
         Box(
             modifier = Modifier
                 .size(64.dp)
-                .background(Color(0xFFDFF2FF), RoundedCornerShape(32.dp)),
+                .background(Color(0xFFDDEFFC), RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center
         ) {
                 Icon(
                     Icons.Default.VpnKey,
                     contentDescription = null,
                     modifier = Modifier.size(28.dp),
-                    tint = Color(0xFF0078D7)
+                    tint = Color(0xFF0078D4)
                 )
         }
 

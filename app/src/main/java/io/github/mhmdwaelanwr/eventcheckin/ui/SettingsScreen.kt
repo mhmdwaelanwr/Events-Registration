@@ -1,5 +1,7 @@
 package io.github.mhmdwaelanwr.eventcheckin.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.mhmdwaelanwr.eventcheckin.viewmodel.AttendanceViewModel
@@ -25,6 +28,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onLock: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -46,7 +51,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             // Appearance Section
             Text(
@@ -170,13 +175,66 @@ fun SettingsScreen(
                 Text("Lock this station", modifier = Modifier.fillMaxWidth(), fontWeight = FontWeight.SemiBold)
             }
 
-            Spacer(modifier = Modifier.height(72.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "OPEN SOURCE",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            OutlinedButton(
+                onClick = {
+                    val sourceUrl = Uri.parse("https://github.com/mhmdwaelanwr/Events-Registration")
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, sourceUrl))
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(78.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "</>",
+                            color = MaterialTheme.colorScheme.surface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("View source on GitHub", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Explore, learn, and contribute",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text("↗", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // About Section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 24.dp),
+                    .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
