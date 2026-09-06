@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.mhmdwaelanwr.eventcheckin.Hedera
 import io.github.mhmdwaelanwr.eventcheckin.SecurityManager
 import io.github.mhmdwaelanwr.eventcheckin.data.MarkAttendanceRequest
+import io.github.mhmdwaelanwr.eventcheckin.data.MarkAttendanceResponse
 import io.github.mhmdwaelanwr.eventcheckin.data.SettingsPreferences
 import io.github.mhmdwaelanwr.eventcheckin.domain.CheckInRules
 import io.github.mhmdwaelanwr.eventcheckin.network.RetrofitClient
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import retrofit2.Response
 import java.io.IOException
 
 enum class DarkModeConfig {
@@ -25,7 +28,8 @@ enum class DarkModeConfig {
 
 data class SettingsState(
     val darkMode: DarkModeConfig = DarkModeConfig.SYSTEM,
-    val hapticEnabled: Boolean = true
+    val hapticEnabled: Boolean = true,
+    val sudoModeEnabled: Boolean = false
 )
 
 sealed class AttendanceState {
@@ -33,6 +37,7 @@ sealed class AttendanceState {
     object Loading : AttendanceState()
     data class Success(val message: String, val registrationId: String) : AttendanceState()
     data class AlreadyRegistered(val message: String, val registrationId: String) : AttendanceState()
+    data class NeedsApproval(val message: String, val registrationId: String) : AttendanceState()
     data class PendingSync(val registrationId: String, val pendingCount: Int) : AttendanceState()
     data class Error(val message: String) : AttendanceState()
 }
@@ -64,7 +69,11 @@ class AttendanceViewModel(
         settingsPreferences.saveHapticEnabled(enabled)
     }
 
-    fun markAttendance(registrationId: String) {
+    fun toggleSudoMode(enabled: Boolean) {
+        _settingsState.value = _settingsState.value.copy(sudoModeEnabled = enabled)
+    }
+
+    fun markAttendance(registrationId: String, sudoOverride: Boolean = false) {
         val normalizedId = CheckInRules.normalizeRegistrationId(registrationId)
         if (normalizedId == null) {
             _uiState.value = AttendanceState.Error("Invalid registration code")
@@ -73,7 +82,7 @@ class AttendanceViewModel(
         if (_uiState.value is AttendanceState.Loading) return
 
         val currentTime = System.currentTimeMillis()
-        if (CheckInRules.shouldDebounceScan(
+        if (!sudoOverride && CheckInRules.shouldDebounceScan(
                 registrationId = normalizedId,
                 lastRegistrationId = lastScannedCode,
                 elapsedMillis = currentTime - lastScanTime,
@@ -90,12 +99,20 @@ class AttendanceViewModel(
             _uiState.value = AttendanceState.Loading
             try {
                 val context = getApplication<Application>().applicationContext
-                val response = RetrofitClient.getInstance(context).markAttendance(MarkAttendanceRequest(normalizedId))
+                val sudo = sudoOverride || _settingsState.value.sudoModeEnabled
+                val response = RetrofitClient.getInstance(context)
+                    .markAttendance(MarkAttendanceRequest(normalizedId, sudo = sudo))
+
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null) {
                         if (body.success) {
-                            var successMessage = body.message ?: "Attendance marked successfully"
+                            var successMessage = body.message
+                                ?: if (body.alreadyMarked == true) {
+                                    "Attendance was already marked for today"
+                                } else {
+                                    "Attendance marked successfully"
+                                }
                             if (Hedera.isConfigured(context)) {
                                 try {
                                     withContext(Dispatchers.IO) {
@@ -109,30 +126,43 @@ class AttendanceViewModel(
                             }
                             _uiState.value = AttendanceState.Success(
                                 message = successMessage,
-                                registrationId = normalizedId
+                                registrationId = body.registrationId ?: normalizedId
                             )
                             retryPendingCheckIns(excludeRegistrationId = normalizedId)
                         } else {
-                            if (CheckInRules.isDuplicateMessage(body.message)) {
+                            val message = body.error ?: body.message
+                            if (CheckInRules.isDuplicateMessage(message)) {
                                 _uiState.value = AttendanceState.AlreadyRegistered(
-                                    message = body.message ?: "User already registered",
+                                    message = message ?: "User already registered",
                                     registrationId = normalizedId
                                 )
                             } else {
-                                _uiState.value = AttendanceState.Error(body.message ?: "Failed to mark attendance")
+                                _uiState.value = AttendanceState.Error(message ?: "Failed to mark attendance")
                             }
                         }
                     } else {
                         _uiState.value = AttendanceState.Error("Empty response body")
                     }
                 } else {
-                    if (response.code() == 409) {
-                         _uiState.value = AttendanceState.AlreadyRegistered(
-                            message = "User already registered",
-                            registrationId = normalizedId
-                        )
-                    } else {
-                        _uiState.value = AttendanceState.Error("The check-in service rejected the request (${response.code()}).")
+                    val apiError = readApiError(response)
+                    when (response.code()) {
+                        403 -> {
+                            _uiState.value = AttendanceState.NeedsApproval(
+                                message = apiError ?: "This attendee has not been accepted yet",
+                                registrationId = normalizedId
+                            )
+                        }
+                        409 -> {
+                            _uiState.value = AttendanceState.AlreadyRegistered(
+                                message = apiError ?: "User already registered",
+                                registrationId = normalizedId
+                            )
+                        }
+                        else -> {
+                            _uiState.value = AttendanceState.Error(
+                                apiError ?: "The check-in service rejected the request (${response.code()})."
+                            )
+                        }
                     }
                 }
             } catch (_: IOException) {
@@ -165,13 +195,16 @@ class AttendanceViewModel(
 
             try {
                 val service = RetrofitClient.getInstance(context)
+                val sudo = _settingsState.value.sudoModeEnabled
                 for (registrationId in pending) {
-                    val response = service.markAttendance(MarkAttendanceRequest(registrationId))
+                    val response = service.markAttendance(
+                        MarkAttendanceRequest(registrationId, sudo = sudo)
+                    )
                     val body = response.body()
                     if (CheckInRules.shouldRemovePending(
                             httpCode = response.code(),
                             successfulBody = response.isSuccessful && body?.success == true,
-                            message = body?.message
+                            message = body?.error ?: body?.message
                         )
                     ) {
                         SecurityManager.removePendingCheckIn(context, registrationId)
@@ -181,6 +214,21 @@ class AttendanceViewModel(
                 // Keep the encrypted queue intact and retry after the next online check-in/app start.
             }
         }
+    }
+
+    private fun readApiError(response: Response<MarkAttendanceResponse>): String? {
+        val raw = runCatching { response.errorBody()?.string().orEmpty() }.getOrDefault("")
+        if (raw.isBlank()) return null
+
+        return runCatching {
+            val json = JSONObject(raw)
+            val error = json.optString("error")
+            if (error.isNotBlank()) {
+                error
+            } else {
+                json.optString("message").takeIf { it.isNotBlank() }
+            }
+        }.getOrNull()
     }
 
     fun resetState() {

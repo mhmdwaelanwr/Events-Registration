@@ -13,7 +13,11 @@ class SettingsPreferences private constructor(
         val darkMode = runCatching { DarkModeConfig.valueOf(storedMode ?: DarkModeConfig.SYSTEM.name) }
             .getOrDefault(DarkModeConfig.SYSTEM)
         val hapticEnabled = sharedPreferences.getBoolean(KEY_HAPTIC_ENABLED, true)
-        return SettingsState(darkMode = darkMode, hapticEnabled = hapticEnabled)
+        return SettingsState(
+            darkMode = darkMode,
+            hapticEnabled = hapticEnabled,
+            sudoModeEnabled = false
+        )
     }
 
     fun saveDarkMode(config: DarkModeConfig) {
@@ -35,4 +39,3 @@ class SettingsPreferences private constructor(
         }
     }
 }
-
