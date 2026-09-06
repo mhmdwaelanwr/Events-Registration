@@ -401,6 +401,19 @@ fun AttendanceApp(viewModel: AttendanceViewModel) {
                         onDismiss = { viewModel.resetState() }
                     )
                 }
+                is AttendanceState.NeedsApproval -> {
+                    ApprovalDialog(
+                        message = state.message,
+                        registrationId = state.registrationId,
+                        onApprove = {
+                            viewModel.markAttendance(
+                                registrationId = state.registrationId,
+                                sudoOverride = true
+                            )
+                        },
+                        onSkip = { viewModel.resetState() }
+                    )
+                }
                 is AttendanceState.PendingSync -> {
                     ResultDialog(
                         type = ResultType.PENDING_SYNC,
@@ -578,6 +591,7 @@ fun ScanningScreen(
                         is AttendanceState.Loading -> Color(0xFFFFD700).copy(alpha = 0.9f)
                         is AttendanceState.Success -> Color(0xFF4CAF50).copy(alpha = 0.9f)
                         is AttendanceState.AlreadyRegistered -> Color(0xFF2196F3).copy(alpha = 0.9f)
+                        is AttendanceState.NeedsApproval -> Color(0xFFFF9800).copy(alpha = 0.95f)
                         is AttendanceState.PendingSync -> Color(0xFFFFB900).copy(alpha = 0.95f)
                         is AttendanceState.Error -> Color(0xFFF44336).copy(alpha = 0.9f)
                     },
@@ -592,6 +606,7 @@ fun ScanningScreen(
                     is AttendanceState.Loading -> "Verifying..."
                     is AttendanceState.Success -> "Verified!"
                     is AttendanceState.AlreadyRegistered -> "Registered Before"
+                    is AttendanceState.NeedsApproval -> "Approval required"
                     is AttendanceState.PendingSync -> "Saved for sync"
                     is AttendanceState.Error -> "Error"
                 },
