@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.mhmdwaelanwr.eventcheckin"
-        minSdk = 24
+        minSdk = 23
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -52,7 +52,7 @@ android {
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             // Avoid generating a fat APK with all ABIs.
-            isUniversalApk = false
+            isUniversalApk = true
         }
     }
 
