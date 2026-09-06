@@ -223,8 +223,11 @@ class AttendanceViewModel(
 
         return runCatching {
             val json = JSONObject(raw)
-            json.optString("error").ifBlank {
-                json.optString("message").ifBlank { null }
+            val error = json.optString("error")
+            if (error.isNotBlank()) {
+                error
+            } else {
+                json.optString("message").takeIf { it.isNotBlank() }
             }
         }.getOrNull()
     }
