@@ -71,7 +71,6 @@ class AttendanceViewModel(
 
     fun toggleSudoMode(enabled: Boolean) {
         _settingsState.value = _settingsState.value.copy(sudoModeEnabled = enabled)
-        settingsPreferences.saveSudoModeEnabled(enabled)
     }
 
     fun markAttendance(registrationId: String, sudoOverride: Boolean = false) {
